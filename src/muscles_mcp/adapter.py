@@ -26,6 +26,9 @@ class McpAdapter:
             name = action.get("name") or action.get("action")
             if not name:
                 continue
+            transports = action.get("transports") or []
+            if transports and "mcp" not in transports:
+                continue
             tools.append(
                 {
                     "name": name,

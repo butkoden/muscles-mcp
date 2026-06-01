@@ -81,6 +81,37 @@ def test_mcp_builds_tools_and_resources_from_core_contract():
     assert inspect_resource["contents"][0]["json"]["actions"][0]["name"] == "bookings.create"
 
 
+def test_mcp_lists_only_actions_open_to_mcp_transport():
+    class _App(metaclass=ApplicationMeta):
+        context = Context(_EchoStrategy)
+
+    app = _App()
+    register_action(
+        app,
+        name="bookings.http_only",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["http"],
+        handler=lambda payload, context: {"transport": context.transport},
+    )
+    register_action(
+        app,
+        name="bookings.open",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        handler=lambda payload, context: {"transport": context.transport},
+    )
+    register_action(
+        app,
+        name="bookings.mcp",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["mcp"],
+        handler=lambda payload, context: {"transport": context.transport},
+    )
+
+    tools = McpAdapter.from_application(app).list_tools()
+
+    assert [tool["name"] for tool in tools] == ["bookings.open", "bookings.mcp"]
+
+
 def test_mcp_call_tool_uses_core_dispatcher_once():
     app, calls = _build_app()
     adapter = McpAdapter.from_application(app)
@@ -131,6 +162,49 @@ def test_mcp_unknown_tool_returns_core_not_found_error():
 
     assert response["isError"] is True
     assert response["error"]["code"] == "not_found"
+
+
+def test_mcp_call_tool_denies_action_not_open_to_mcp_transport():
+    class _App(metaclass=ApplicationMeta):
+        context = Context(_EchoStrategy)
+
+    app = _App()
+    register_action(
+        app,
+        name="bookings.http_only",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["http"],
+        handler=lambda payload, context: {"transport": context.transport},
+    )
+    adapter = McpAdapter.from_application(app)
+
+    response = adapter.call_tool("bookings.http_only", {"title": "Call"})
+
+    assert response["isError"] is True
+    assert response["error"]["code"] == "permission_denied"
+
+
+def test_mcp_async_handler_returns_execution_error():
+    class _App(metaclass=ApplicationMeta):
+        context = Context(_EchoStrategy)
+
+    app = _App()
+
+    async def create_booking(payload, context):
+        return {"title": payload["title"]}
+
+    register_action(
+        app,
+        name="bookings.async",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        handler=create_booking,
+    )
+    adapter = McpAdapter.from_application(app)
+
+    response = adapter.call_tool("bookings.async", {"title": "Call"})
+
+    assert response["isError"] is True
+    assert response["error"]["code"] == "execution_error"
 
 
 def test_mcp_state_is_scoped_to_application_instance():
