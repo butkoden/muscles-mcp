@@ -1,3 +1,3 @@
-from .adapter import McpAdapter
+from .adapter import McpAdapter, McpError
 
-__all__ = ["McpAdapter"]
+__all__ = ["McpAdapter", "McpError"]
