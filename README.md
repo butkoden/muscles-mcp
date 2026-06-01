@@ -20,3 +20,17 @@ copying application logic into the adapter.
 
 Expose a minimal Muscles app as MCP tools and resources, backed by
 `muscles inspect --json` compatible contract data.
+
+## Current Stage (Issue #1)
+
+Implemented minimal MCP adapter from Muscles inspect contract:
+
+- `list_tools()` from `actions` section;
+- `list_resources()` from `schemas` section;
+- `call_tool()` delegates to Muscles action handler.
+
+### Run tests
+
+```bash
+python -m pytest -q
+```
