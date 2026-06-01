@@ -1,29 +1,32 @@
 # Muscles MCP
 
-Model Context Protocol adapter for Muscles.
+Model Context Protocol projection for Muscles.
 
-This package should expose a Muscles application to AI tools through MCP without
-copying application logic into the adapter.
+This package exposes a Muscles application to AI tools through MCP without
+copying application logic into the MCP layer.
 
 ## Concept Guardrails
 
-- Muscles remains the source of truth for actions, schemas, rules, context, and
-  permissions.
-- MCP tools/resources must be generated from the Muscles application contract.
-- The adapter must not invent its own routing, validation, auth, or business
-  model.
+- Muscles remains the source of truth for actions, schemas, rules, context,
+  permissions, and execution.
+- MCP tools/resources must be generated from `inspect_application(app)`.
+- The MCP layer must not invent its own routing, validation, auth, action
+  registry, or business model.
 - A use case implemented once in Muscles should become available through MCP
   without rewriting the use case.
 - Machine-readable metadata is a product feature, not an internal detail.
+- MCP is a protocol projection over `ApplicationMeta`, `Context`, the
+  application-scoped registry, `ActionContract`, and `ActionDispatcher`; it is
+  not a separate runtime next to Muscles.
 
 ## Initial Goal
 
-Expose a minimal Muscles app as MCP tools and resources, backed by
-`muscles inspect --json` compatible contract data.
+Expose a Muscles app as MCP tools and resources, backed by
+`inspect_application(app)` / `muscles inspect --json` compatible contract data.
 
-## Current Stage (Issue #1)
+## Current Stage (Issue #4)
 
-Implemented MCP adapter baseline from Muscles inspect contract:
+Implemented MCP projection from Muscles inspect contract:
 
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
@@ -33,15 +36,22 @@ Implemented MCP adapter baseline from Muscles inspect contract:
   - `muscles://app/schemas`
   - `muscles://app/rules`
 - `read_resource(uri)` returns stable JSON payload per resource;
-- `call_tool()` delegates to Muscles action handler (no business-logic copy);
-- tool input validation is derived from action `input_schema`;
-- permission/rule denial is returned as structured MCP error.
+- `call_tool()` delegates to Muscles core `ActionDispatcher` with
+  `transport="mcp"` (no business-logic copy);
+- tool input validation is performed by Muscles core;
+- permission/rule denial is returned as structured MCP error mapped from core
+  errors.
 
 ### Run tests
 
 ```bash
 python -m pytest -q
 ```
+
+User docs:
+
+- English: [docs/mcp-projection.en.md](docs/mcp-projection.en.md)
+- Русский: [docs/mcp-projection.ru.md](docs/mcp-projection.ru.md)
 
 ## Detailed Usage Example
 
@@ -101,31 +111,44 @@ contract = {
 
 ### 2. Connect MCP to the existing Muscles execution path
 
-The action handler is the bridge back into Muscles. In production code this
-should call the same context/use case path used by HTTP, CLI, JSON-RPC, or other
-adapters.
+The Muscles application is the bridge. MCP receives the app, reads its contract
+through `inspect_application(app)`, and executes tools through
+`ActionDispatcher`.
 
 ```python
 from muscles_mcp import McpAdapter
 
-
-class BookingContext:
-    def execute(self, action_name: str, **payload):
-        if action_name == "bookings.create":
-            return {
-                "id": 1,
-                "title": payload["title"],
-                "guest_count": payload.get("guest_count", 1),
-                "status": "created",
-            }
-        raise LookupError(action_name)
+from muscles import ApplicationMeta, Context, register_action
 
 
-context = BookingContext()
-adapter = McpAdapter(
-    inspect_contract=contract,
-    action_handler=lambda name, args: context.execute(name, **args),
+class BookingApp(metaclass=ApplicationMeta):
+    context = Context(MyStrategy, {})
+
+
+app = BookingApp()
+
+
+register_action(
+    app,
+    name="bookings.create",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "title": {"type": "string"},
+            "guest_count": {"type": "integer"},
+        },
+        "required": ["title"],
+    },
+    handler=lambda payload, context: {
+        "id": 1,
+        "title": payload["title"],
+        "guest_count": payload.get("guest_count", 1),
+        "status": "created",
+    },
 )
+
+
+adapter = McpAdapter.from_application(app)
 ```
 
 ### 3. Let an AI client discover available tools
@@ -196,9 +219,8 @@ assert response == {
 }
 ```
 
-The MCP adapter does not know how to create a booking. It only validates the
-input shape from the Muscles contract and delegates execution to the Muscles
-application path.
+The MCP adapter does not know how to create a booking. It delegates execution to
+the Muscles dispatcher, where validation, rules and the use case live.
 
 ### 6. Validation and permission errors stay structured
 
@@ -211,21 +233,25 @@ assert missing_title == {
     "isError": True,
     "error": {
         "code": "invalid_params",
-        "message": "Missing required argument: title",
-        "data": None,
+        "message": "'title' is a required property",
+        "data": {"path": []},
     },
 }
 ```
 
-If the Muscles rules/security layer denies the action, return a `PermissionError`
-from the action handler:
+If the Muscles rules/security layer denies the action, the core dispatcher raises
+`ActionPermissionDenied` and MCP maps it to a protocol error:
 
 ```python
-def denied_handler(name, args):
-    raise PermissionError("Denied by Muscles rules")
+from muscles import ActionPermissionDenied
 
 
-secure_adapter = McpAdapter(contract, denied_handler)
+def denied_handler(payload, context):
+    raise ActionPermissionDenied(context.action.name, "Denied by Muscles rules")
+
+
+register_action(app, name="bookings.create", handler=denied_handler)
+secure_adapter = McpAdapter.from_application(app)
 denied = secure_adapter.call_tool("bookings.create", {"title": "Call"})
 
 assert denied == {
@@ -233,6 +259,7 @@ assert denied == {
     "error": {
         "code": "permission_denied",
         "message": "Denied by Muscles rules",
+        "data": None,
     },
 }
 ```
@@ -255,20 +282,6 @@ inspect_resource = adapter.read_resource("muscles://app/inspect")
 result = adapter.call_tool("bookings.create", {"title": "Call"})
 ```
 
-By default, `from_application()` delegates tool execution to:
-
-```python
-app.context.execute(action_name, **arguments)
-```
-
-If an application needs a custom dispatch policy, pass `action_handler`:
-
-```python
-adapter = McpAdapter.from_application(
-    app,
-    action_handler=lambda name, args: app.context.execute("mcp", name, **args),
-)
-```
-
-The rule is the same: MCP is only a protocol adapter. The application model,
-rules, schemas, and use cases stay in Muscles.
+`from_application()` delegates tool execution to `ActionDispatcher` with
+`transport="mcp"`. The application model, rules, schemas and use cases stay in
+Muscles.
