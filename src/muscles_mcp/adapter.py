@@ -29,13 +29,14 @@ class McpAdapter:
             transports = action.get("transports") or []
             if transports and "mcp" not in transports:
                 continue
-            tools.append(
-                {
-                    "name": name,
-                    "description": action.get("description", ""),
-                    "input_schema": action.get("input_schema", {"type": "object", "properties": {}}),
-                }
-            )
+            tool = {
+                "name": name,
+                "description": action.get("description", ""),
+                "input_schema": action.get("input_schema", {"type": "object", "properties": {}}),
+            }
+            if action.get("stream_output"):
+                tool["stream"] = action.get("stream", {"enabled": True})
+            tools.append(tool)
         return tools
 
     def list_resources(self) -> list[dict[str, Any]]:
@@ -65,6 +66,8 @@ class McpAdapter:
             from muscles.core import ActionDispatcher
 
             result = ActionDispatcher(self._app).execute(name, payload, transport="mcp")
+            if result.is_stream:
+                return self._stream_response(result.value)
             return {"content": [{"type": "json", "json": result.value}]}
         except Exception as exc:
             mapped = self._map_core_error(exc)
@@ -93,6 +96,31 @@ class McpAdapter:
         if isinstance(exc, ActionExecutionError):
             return {"code": "execution_error", "message": exc.message, "data": exc.data}
         return None
+
+    @staticmethod
+    def _stream_response(stream_result: Any) -> dict[str, Any]:
+        from muscles.core import stream_events
+
+        content = []
+        is_error = False
+        for event in stream_events(stream_result):
+            if event.type == "error":
+                is_error = True
+            content.append(
+                {
+                    "type": "json",
+                    "json": {
+                        "event": event.type,
+                        "data": event.data,
+                        "id": event.event_id,
+                        "metadata": dict(event.metadata),
+                    },
+                }
+            )
+        response: dict[str, Any] = {"content": content}
+        if is_error:
+            response["isError"] = True
+        return response
 
 class McpError(Exception):
     def __init__(self, code: str, message: str, data: dict[str, Any] | None = None):

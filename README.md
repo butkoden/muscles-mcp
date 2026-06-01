@@ -42,6 +42,18 @@ Implemented MCP projection from Muscles inspect contract:
 - permission/rule denial is returned as structured MCP error mapped from core
   errors.
 
+## Core Stream Projection
+
+English: stream-capable tools are discovered from `inspect_application(app)`.
+When `ActionDispatcher` returns a core `StreamResult`, MCP projects each core
+`StreamEvent` into JSON content with `event`, `data`, `id`, and `metadata`.
+Business stream semantics stay in `muscles.core`.
+
+Русский: stream-capable tools обнаруживаются через `inspect_application(app)`.
+Когда `ActionDispatcher` возвращает core `StreamResult`, MCP проецирует каждый
+core `StreamEvent` в JSON content с `event`, `data`, `id` и `metadata`.
+Business stream semantics остаётся в `muscles.core`.
+
 ### Run tests
 
 ```bash

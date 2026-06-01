@@ -3,6 +3,8 @@ from muscles.core import (
     ApplicationMeta,
     BaseStrategy,
     Context,
+    StreamEvent,
+    StreamResult,
     register_action,
 )
 
@@ -226,3 +228,69 @@ def test_mcp_state_is_scoped_to_application_instance():
 
     assert [tool["name"] for tool in tools_a] == ["bookings.create"]
     assert [tool["name"] for tool in tools_b] == ["tasks.create"]
+
+
+def test_mcp_lists_stream_capability_from_core_inspect_contract():
+    app, _ = _build_app()
+    register_action(
+        app,
+        name="bookings.stream",
+        input_schema={"type": "object", "properties": {}},
+        transports=["mcp"],
+        stream_output=True,
+        stream_metadata={"event_types": ["progress", "result"]},
+        handler=lambda payload, context: StreamResult(source=[]),
+    )
+
+    tools = McpAdapter.from_application(app).list_tools()
+    stream_tool = next(tool for tool in tools if tool["name"] == "bookings.stream")
+
+    assert stream_tool["stream"]["enabled"] is True
+    assert stream_tool["stream"]["event_types"] == ["progress", "result"]
+
+
+def test_mcp_call_tool_projects_core_stream_events_without_second_handler_call():
+    calls = []
+
+    def stream_booking(payload, context):
+        calls.append((payload, context.transport))
+        return StreamResult(
+            source=[
+                StreamEvent(type="progress", data={"step": 1}, event_id="evt-1"),
+                StreamEvent(type="log", data={"message": "working"}),
+                StreamEvent(type="result", data={"ok": True}),
+            ]
+        )
+
+    app, _ = _build_app(handler=stream_booking)
+    adapter = McpAdapter.from_application(app)
+
+    response = adapter.call_tool("bookings.create", {"title": "Call"})
+
+    assert calls == [({"title": "Call"}, "mcp")]
+    assert response == {
+        "content": [
+            {"type": "json", "json": {"event": "progress", "data": {"step": 1}, "id": "evt-1", "metadata": {}}},
+            {"type": "json", "json": {"event": "log", "data": {"message": "working"}, "id": None, "metadata": {}}},
+            {"type": "json", "json": {"event": "result", "data": {"ok": True}, "id": None, "metadata": {}}},
+        ]
+    }
+
+
+def test_mcp_stream_error_event_is_mcp_friendly_error_response():
+    def stream_booking(payload, context):
+        def source():
+            yield StreamEvent(type="progress", data={"step": 1})
+            raise RuntimeError("stream failed")
+
+        return StreamResult(source=source())
+
+    app, _ = _build_app(handler=stream_booking)
+    adapter = McpAdapter.from_application(app)
+
+    response = adapter.call_tool("bookings.create", {"title": "Call"})
+
+    assert response["isError"] is True
+    assert response["content"][0]["json"]["event"] == "progress"
+    assert response["content"][1]["json"]["event"] == "error"
+    assert response["content"][1]["json"]["data"]["code"] == "stream_error"
