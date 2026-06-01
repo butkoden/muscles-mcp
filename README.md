@@ -48,6 +48,11 @@ Implemented MCP projection from Muscles inspect contract:
 python -m pytest -q
 ```
 
+User docs:
+
+- English: [docs/mcp-projection.en.md](docs/mcp-projection.en.md)
+- Русский: [docs/mcp-projection.ru.md](docs/mcp-projection.ru.md)
+
 ## Detailed Usage Example
 
 This example shows the intended architecture:
