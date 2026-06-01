@@ -1,22 +1,23 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any
 
 
 class McpAdapter:
-    """Builds MCP-exposed tools/resources from Muscles inspect contract."""
+    """Projects a Muscles application contract into MCP tools/resources."""
 
-    def __init__(self, inspect_contract: dict[str, Any], action_handler: Callable[[str, dict[str, Any]], Any]) -> None:
-        self._contract = inspect_contract
-        self._action_handler = action_handler
+    def __init__(self, app) -> None:
+        self._app = app
 
     @classmethod
-    def from_application(cls, app, action_handler: Callable[[str, dict[str, Any]], Any] | None = None):
+    def from_application(cls, app):
+        return cls(app)
+
+    @property
+    def _contract(self) -> dict[str, Any]:
         from muscles.core import inspect_application
 
-        contract = inspect_application(app)
-        handler = action_handler or (lambda name, args: app.context.execute(name, **args))
-        return cls(contract, handler)
+        return inspect_application(self._app)
 
     def list_tools(self) -> list[dict[str, Any]]:
         actions = self._contract.get("actions", [])
@@ -58,40 +59,37 @@ class McpAdapter:
     def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
         payload = arguments or {}
         try:
-            schema = self._tool_input_schema(name)
-            self._validate_arguments(schema, payload)
-            result = self._action_handler(name, payload)
-            return {"content": [{"type": "json", "json": result}]}
-        except PermissionError as exc:
-            return {"isError": True, "error": {"code": "permission_denied", "message": str(exc)}}
-        except McpError as exc:
-            return {"isError": True, "error": {"code": exc.code, "message": exc.message, "data": exc.data}}
+            from muscles.core import ActionDispatcher
 
-    def _tool_input_schema(self, tool_name: str) -> dict[str, Any]:
-        for tool in self.list_tools():
-            if tool["name"] == tool_name:
-                return tool.get("input_schema") or {"type": "object", "properties": {}}
-        raise McpError(code="not_found", message=f"Unknown tool: {tool_name}")
+            result = ActionDispatcher(self._app).execute(name, payload, transport="mcp")
+            return {"content": [{"type": "json", "json": result.value}]}
+        except Exception as exc:
+            mapped = self._map_core_error(exc)
+            if mapped is not None:
+                return {"isError": True, "error": mapped}
+            return {"isError": True, "error": {"code": "internal_error", "message": "Internal error", "data": None}}
 
     @staticmethod
-    def _validate_arguments(schema: dict[str, Any], payload: dict[str, Any]) -> None:
-        if schema.get("type") not in (None, "object"):
-            raise McpError(code="invalid_schema", message="Only object input_schema is supported in stage #1")
-        properties = schema.get("properties", {})
-        required = schema.get("required", [])
-        for key in required:
-            if key not in payload:
-                raise McpError(code="invalid_params", message=f"Missing required argument: {key}")
-        for key, value in payload.items():
-            spec = properties.get(key)
-            if not spec:
-                continue
-            expected = spec.get("type")
-            if expected == "string" and not isinstance(value, str):
-                raise McpError(code="invalid_params", message=f"Argument {key} must be string")
-            if expected == "integer" and not isinstance(value, int):
-                raise McpError(code="invalid_params", message=f"Argument {key} must be integer")
+    def _map_core_error(exc: Exception) -> dict[str, Any] | None:
+        try:
+            from muscles.core import (
+                ActionExecutionError,
+                ActionNotFound,
+                ActionPermissionDenied,
+                ActionValidationError,
+            )
+        except Exception:
+            return None
 
+        if isinstance(exc, ActionNotFound):
+            return {"code": "not_found", "message": exc.message, "data": exc.data}
+        if isinstance(exc, ActionValidationError):
+            return {"code": "invalid_params", "message": exc.message, "data": exc.data}
+        if isinstance(exc, ActionPermissionDenied):
+            return {"code": "permission_denied", "message": exc.message, "data": exc.data}
+        if isinstance(exc, ActionExecutionError):
+            return {"code": "execution_error", "message": exc.message, "data": exc.data}
+        return None
 
 class McpError(Exception):
     def __init__(self, code: str, message: str, data: dict[str, Any] | None = None):
