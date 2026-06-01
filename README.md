@@ -20,3 +20,25 @@ copying application logic into the adapter.
 
 Expose a minimal Muscles app as MCP tools and resources, backed by
 `muscles inspect --json` compatible contract data.
+
+## Current Stage (Issue #1)
+
+Implemented MCP adapter baseline from Muscles inspect contract:
+
+- `list_tools()` from contract `actions`;
+- `list_resources()` for canonical MCP URIs:
+  - `muscles://app/inspect`
+  - `muscles://app/actions`
+  - `muscles://app/routes`
+  - `muscles://app/schemas`
+  - `muscles://app/rules`
+- `read_resource(uri)` returns stable JSON payload per resource;
+- `call_tool()` delegates to Muscles action handler (no business-logic copy);
+- tool input validation is derived from action `input_schema`;
+- permission/rule denial is returned as structured MCP error.
+
+### Run tests
+
+```bash
+python -m pytest -q
+```
