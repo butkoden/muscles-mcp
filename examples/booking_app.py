@@ -8,7 +8,10 @@ class BookingCreate(Model):
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    context = Context(McpStrategy)
+    # Public MCP entrypoint context.
+    context = Context(McpStrategy, transport="mcp")
+    # Additional MCP context for profile-specific wiring.
+    context_admin = Context(McpStrategy, transport="mcp-admin")
     mcp = McpRouter(route_prefix="/api")
 
 
@@ -32,6 +35,7 @@ def create_booking(payload, context):
 
 if __name__ == "__main__":
     print(app.context.execute(operation="list_tools"))
+    print(app.context_admin.execute(operation="list_tools"))
     print(
         app.context.execute(
             operation="call_tool",

@@ -28,7 +28,10 @@ Expose a Muscles app as MCP tools and resources, backed by
 
 Implemented MCP projection as a Muscles application strategy:
 
-- `McpStrategy` can be connected through `Context(McpStrategy)`;
+- `McpStrategy` подключается через `Context(McpStrategy, transport=...)`:
+  - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
+  - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
+  - `transport="mcp"` — прямой selector (без отдельного entrypoint-контекста).
 - `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
@@ -130,11 +133,17 @@ connected to the Muscles context. MCP reads the contract through
 from muscles_mcp import McpAdapter, McpRouter, McpStrategy
 
 from muscles import ApplicationMeta, Context, register_action
+from muscles.asgi import AsgiStrategy
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    context = Context(McpStrategy)
+    asgi = Context(AsgiStrategy, transport="asgi")
     mcp = McpRouter(route_prefix="/api")
+    mcp_context = Context(McpStrategy, transport=asgi)
+
+    # Example with explicit binding without router in MCP context params:
+    # asgi_admin = Context(AsgiStrategy, transport="asgi", params={"profile": "admin"})
+    # mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
 
 
 app = BookingApp()
@@ -182,9 +191,9 @@ def admin_health(payload, context):
     return {"ok": True}
 
 
-tools = app.context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")
-admin_tools = app.context.execute(operation="list_tools", server="admin")
-response = app.context.execute(
+tools = app.mcp_context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")
+admin_tools = app.mcp_context.execute(operation="list_tools", server="admin")
+response = app.mcp_context.execute(
     operation="call_tool",
     server="public",
     token="SIMSIM-PUBLIC",
@@ -235,7 +244,7 @@ mcp_cli = make_protocol_app(app, "mcp-cli")
 ### 3. Let an AI client discover available tools
 
 ```python
-tools = app.context.execute(operation="list_tools")
+tools = app.mcp_context.execute(operation="list_tools")
 
 assert tools == [
     {
@@ -259,7 +268,7 @@ the codebase.
 ### 4. Expose Muscles metadata as MCP resources
 
 ```python
-resources = app.context.execute(operation="list_resources")
+resources = app.mcp_context.execute(operation="list_resources")
 
 assert {resource["uri"] for resource in resources} == {
     "muscles://app/inspect",
@@ -269,8 +278,8 @@ assert {resource["uri"] for resource in resources} == {
     "muscles://app/rules",
 }
 
-inspect_resource = app.context.execute(operation="read_resource", uri="muscles://app/inspect")
-actions_resource = app.context.execute(operation="read_resource", uri="muscles://app/actions")
+inspect_resource = app.mcp_context.execute(operation="read_resource", uri="muscles://app/inspect")
+actions_resource = app.mcp_context.execute(operation="read_resource", uri="muscles://app/actions")
 ```
 
 These resources give an agent stable context before it edits or calls the app.
@@ -280,7 +289,7 @@ contract instead of scanning random Python files.
 ### 5. Call a Muscles action through MCP
 
 ```python
-response = app.context.execute(
+response = app.mcp_context.execute(
     operation="call_tool",
     name="bookings.create",
     arguments={"title": "Discovery call", "guest_count": 2},

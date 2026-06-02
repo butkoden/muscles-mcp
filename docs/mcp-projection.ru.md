@@ -11,26 +11,55 @@ permissions model или action registry.
 ```python
 from muscles.core import ApplicationMeta, Context
 from muscles_mcp import McpStrategy
+from muscles.asgi import AsgiStrategy
 
 
 class App(metaclass=ApplicationMeta):
-    context = Context(McpStrategy)
+    # Контекст MCP может ссылаться на entrypoint-контекст (например asgi).
+    asgi = Context(AsgiStrategy, transport="asgi")
+    mcp = Context(McpStrategy, transport=asgi)
+```
+
+Для сценария с несколькими профилями создаём отдельные entrypoint-контексты и
+привязываем к ним MCP-контексты напрямую:
+
+```python
+class App(metaclass=ApplicationMeta):
+    asgi_public = Context(AsgiStrategy, transport="asgi", params={"profile": "public"})
+    asgi_admin = Context(AsgiStrategy, transport="asgi", params={"profile": "admin"})
+
+    mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
+    mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
 ```
 
 `McpAdapter.from_application(app)` сохранен как совместимый facade для старого
-кода, но внутри использует ту же strategy/projection логику.
+кода, но внутри использует ту же strategy/protocol логику.
+
+`transport` в `Context(McpStrategy, transport=...)` теперь обычно ссылается на entrypoint:
+- `transport=asgi` / `transport=wsgi` / `transport=cli` для прямого протокольного привязки;
+- `transport=<other_context>` или `transport="asgi_public"` / `transport="asgi_admin"` для привязки к конкретному entrypoint-контексту.
+
+Важно: для MCP-контекста `router` больше не нужен: transport уже указывает на entrypoint.
+Маршрутизация (`route`/`route_prefix`/`servers`) задается в entrypoint-контексте или в MCP-декораторах (`McpServer`/`McpRouter`), а MCP-контекст хранит только выбор стратегии/профиля.
+
+Пример без `router` в параметрах MCP-контекста:
+
+```python
+Context(McpStrategy, params={"protocol": "mcp", "router": mcp_public_router})  # устаревший вариант
+Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})  # рекомендуемый вариант
+```
 
 Полный пример пользовательского приложения есть в
 `examples/booking_app.py`. В нем action использует Muscles `Model` как
-`input_schema`, а MCP вызывает этот action через `Context(McpStrategy)`.
+`input_schema`, а MCP вызывает этот action через MCP-контекст.
 
 ## Discovery
 
 MCP tools и resources строятся из Muscles inspect contract:
 
 ```python
-tools = app.context.execute(operation="list_tools")
-inspect_resource = app.context.execute(
+tools = app.mcp.execute(operation="list_tools")
+inspect_resource = app.mcp.execute(
     operation="read_resource",
     uri="muscles://app/inspect",
 )
@@ -43,7 +72,7 @@ inspect_resource = app.context.execute(
 Tool calls возвращаются в Muscles core:
 
 ```python
-response = app.context.execute(
+response = app.mcp.execute(
     operation="call_tool",
     name="bookings.create",
     arguments={"title": "Call"},
@@ -54,12 +83,19 @@ response = app.context.execute(
 `transport="mcp"`. Валидация, rules/security и handler execution происходят в
 core.
 
+`McpStrategy` — это protocol codec. Он отвечает за формат MCP-запросов и ответов
+(инструменты/ресурсы/ошибки), но не за сетевой транспорт.
+Транспортный уровень обеспечивают внешние entrypoint-обертки:
+- `make_mcp_asgi_app` — MCP поверх ASGI HTTP;
+- `make_mcp_wsgi_app` — MCP поверх WSGI HTTP;
+- `make_mcp_cli_command` — MCP через CLI/stdio-подобный поток ввода-вывода.
+
 ## Пример через контрактный payload
 
 Можно передавать MCP-запрос как единый payload:
 
 ```python
-response = app.context.execute(
+response = app.mcp.execute(
     request={
         "operation": "call_tool",
         "name": "bookings.create",
@@ -71,8 +107,8 @@ response = app.context.execute(
 То же самое для discovery:
 
 ```python
-tools = app.context.execute(request={"operation": "list_tools"})
-actions = app.context.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
+tools = app.mcp.execute(request={"operation": "list_tools"})
+actions = app.mcp.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
 ```
 
 ## Streaming

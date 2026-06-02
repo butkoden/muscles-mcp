@@ -1,8 +1,8 @@
+import json
 import sys
 import types
-import json
 
-from muscles.core import ApplicationMeta, Context, register_action
+from muscles.core import ApplicationMeta, BaseStrategy, Context, register_action
 
 from muscles_mcp import (
     McpAdapter,
@@ -50,15 +50,34 @@ def test_make_protocol_app_builds_mcp_entrypoint_and_uses_mcp_strategy():
     entrypoint = make_protocol_app(app, "mcp")
 
     assert isinstance(entrypoint, McpAdapter)
-    assert app.context.strategy == McpStrategy
+
+
+def test_make_protocol_app_can_use_named_context():
+    class _McpNamedContextApp(metaclass=ApplicationMeta):
+        context = Context(McpStrategy)
+        asgi = Context(_EchoStrategy, transport="asgi")
+        mcp_private = Context(_EchoStrategy, transport="asgi")
+
+    app = _McpNamedContextApp()
+    register_action(
+        app,
+        name="ping",
+        input_schema={"type": "object", "properties": {}},
+        handler=lambda payload, context: {"pong": True},
+    )
+
+    entrypoint = make_protocol_app(app, "mcp", context="mcp_private")
+
+    assert isinstance(entrypoint, McpAdapter)
+    assert entrypoint.context is app.mcp_private
 
 
 def test_make_protocol_app_builds_asgi_entrypoint_after_dynamic_protocol_switch(monkeypatch):
     class FakeAsgiStrategy:
         pass
 
-    def fake_asgi_app(app):
-        return ("asgi-entry", app)
+    def fake_asgi_app(app, context=None):
+        return ("asgi-entry", app, context)
 
     fake_module = types.ModuleType("muscles.asgi")
     fake_module.AsgiStrategy = FakeAsgiStrategy
@@ -68,25 +87,23 @@ def test_make_protocol_app_builds_asgi_entrypoint_after_dynamic_protocol_switch(
     app = _build_app()
     entrypoint = make_protocol_app(app, "asgi")
 
-    assert entrypoint == ("asgi-entry", app)
-    assert app.context.strategy is FakeAsgiStrategy
+    assert entrypoint == ("asgi-entry", app, app.context)
 
 
-def test_make_protocol_app_builds_wsgi_entrypoint_after_dynamic_protocol_switch(monkeypatch):
-    class FakeWsgiStrategy:
-        def execute(self, environ=None, start_response=None, **kwargs):
+def test_make_protocol_app_builds_wsgi_entrypoint_from_wsgi_context():
+    class WsgiContext(BaseStrategy):
+        def execute(self, *args, **kwargs):
+            environ = kwargs.get("environ")
+            start_response = kwargs.get("start_response")
             if start_response is not None:
                 start_response("200 OK", [])
             return [f"path:{environ.get('PATH_INFO')}".encode()]
 
-    fake_wsgi_package = types.ModuleType("muscles.wsgi")
-    fake_wsgi_impl = types.ModuleType("muscles.wsgi.wsgi")
-    fake_wsgi_impl.WsgiStrategy = FakeWsgiStrategy
+    class _WsgiApp(metaclass=ApplicationMeta):
+        wsgi = Context(WsgiContext, transport="wsgi")
 
-    monkeypatch.setitem(sys.modules, "muscles.wsgi", fake_wsgi_package)
-    monkeypatch.setitem(sys.modules, "muscles.wsgi.wsgi", fake_wsgi_impl)
+    app = _WsgiApp()
 
-    app = _build_app()
     entrypoint = make_protocol_app(app, "wsgi")
     status = None
     headers = None
@@ -100,7 +117,6 @@ def test_make_protocol_app_builds_wsgi_entrypoint_after_dynamic_protocol_switch(
     assert response == [b"path:/ping"]
     assert status == "200 OK"
     assert headers == []
-    assert app.context.strategy is FakeWsgiStrategy
 
 
 def test_make_protocol_app_rejects_unknown_protocol():

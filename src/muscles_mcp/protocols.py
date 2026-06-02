@@ -4,8 +4,7 @@ import json
 import sys
 from typing import Any
 
-from .adapter import McpAdapter
-from .strategy import McpStrategy, McpError
+from .adapter import McpAdapter, resolve_mcp_context
 
 
 class ProtocolUnavailableError(RuntimeError):
@@ -38,6 +37,8 @@ def _read_json_body(stream, length: int | None = None) -> dict[str, Any]:
 
 
 def _coerce_payload_from_exception(exc: Exception) -> dict[str, Any]:
+    from .adapter import McpError
+
     if isinstance(exc, McpError):
         return {"isError": True, "error": {"code": exc.code, "message": exc.message, "data": exc.data}}
     return {
@@ -50,11 +51,11 @@ def _coerce_payload_from_exception(exc: Exception) -> dict[str, Any]:
     }
 
 
-def _execute_mcp_payload(app, payload: dict[str, Any] | None = None) -> dict[str, Any]:
-    return McpStrategy().execute(container=app, request=payload or None)
+def _execute_mcp_payload(app, payload: dict[str, Any] | None = None, context: str | Any | None = None) -> dict[str, Any]:
+    return McpAdapter.from_application(app, context=context).execute(request=payload or None)
 
 
-def make_mcp_asgi_app(app, route: str = "/mcp"):
+def make_mcp_asgi_app(app, route: str = "/mcp", context: str | Any | None = None):
     route = f"/{route.lstrip('/')}"
 
     async def application(scope, receive, send):
@@ -97,7 +98,7 @@ def make_mcp_asgi_app(app, route: str = "/mcp"):
             )
         else:
             try:
-                response = _execute_mcp_payload(app, payload)
+                response = _execute_mcp_payload(app, payload, context=context)
             except Exception as exc:
                 response = _coerce_payload_from_exception(exc)
 
@@ -117,7 +118,7 @@ def make_mcp_asgi_app(app, route: str = "/mcp"):
     return application
 
 
-def make_mcp_wsgi_app(app, route: str = "/mcp"):
+def make_mcp_wsgi_app(app, route: str = "/mcp", context: str | Any | None = None):
     route = f"/{route.lstrip('/')}"
 
     def application(environ, start_response):
@@ -146,7 +147,7 @@ def make_mcp_wsgi_app(app, route: str = "/mcp"):
             return _as_json_response(response, start_response)
 
         try:
-            response = _execute_mcp_payload(app, payload)
+            response = _execute_mcp_payload(app, payload, context=context)
         except Exception as exc:
             response = _coerce_payload_from_exception(exc)
         return _as_json_response(response, start_response)
@@ -154,7 +155,7 @@ def make_mcp_wsgi_app(app, route: str = "/mcp"):
     return application
 
 
-def make_mcp_cli_command(app):
+def make_mcp_cli_command(app, context: str | Any | None = None):
     """Return a callable that executes one MCP request from JSON payload."""
 
     def command(payload: dict[str, Any] | None = None, **kwargs):
@@ -162,73 +163,64 @@ def make_mcp_cli_command(app):
             payload = json.loads(sys.stdin.read() or "{}")
         if kwargs:
             payload = {**payload, **kwargs}
-        response = _execute_mcp_payload(app, payload)
+        response = _execute_mcp_payload(app, payload, context=context)
         print(json.dumps(response, ensure_ascii=False, indent=2))
         return response
 
     return command
 
 
-def _set_strategy(app, protocol: str) -> None:
-    if protocol == "mcp":
-        app.context.strategy = McpStrategy
-        return
-
-    if protocol == "asgi":
-        try:
-            from muscles.asgi import AsgiStrategy
-        except Exception as exc:
-            raise ProtocolUnavailableError(
-                "ASGI protocol requested, but 'muscles-asgi' is not installed."
-            ) from exc
-        app.context.strategy = AsgiStrategy
-        return
-
-    if protocol == "wsgi":
-        try:
-            from muscles.wsgi.wsgi import WsgiStrategy
-        except Exception as exc:
-            raise ProtocolUnavailableError(
-                "WSGI protocol requested, but 'muscles-wsgi' is not installed."
-            ) from exc
-        app.context.strategy = WsgiStrategy
-        return
-
-    raise ValueError(f"Unsupported protocol '{protocol}'. Use 'mcp', 'mcp-asgi', 'mcp-wsgi', 'mcp-cli', 'asgi', or 'wsgi'.")
+def _resolve_protocol_context(app, protocol: str, context: str | Any | None = None):
+    return resolve_mcp_context(
+        app,
+        context=context,
+        transport=protocol,
+        default="context",
+    )
 
 
-def make_protocol_app(app, protocol: str, route: str = "/mcp") -> Any:
+def make_protocol_app(app, protocol: str, route: str = "/mcp", context: str | Any | None = None) -> Any:
     """Build a protocol-aware entrypoint for one Muscles application."""
 
     protocol = protocol.lower()
+
     if protocol == "mcp":
-        _set_strategy(app, protocol)
-        return McpAdapter.from_application(app)
+        return McpAdapter.from_application(app, context=context)
 
     if protocol == "mcp-asgi":
-        return make_mcp_asgi_app(app, route=route)
+        return make_mcp_asgi_app(app, route=route, context=context)
 
     if protocol == "mcp-wsgi":
-        return make_mcp_wsgi_app(app, route=route)
+        return make_mcp_wsgi_app(app, route=route, context=context)
 
     if protocol == "mcp-cli":
-        return make_mcp_cli_command(app)
+        return make_mcp_cli_command(app, context=context)
 
     if protocol == "asgi":
         from muscles.asgi import asgi_app
 
-        _set_strategy(app, protocol)
+        selected_context = _resolve_protocol_context(app, "asgi", context=context)
+
+        if selected_context is None:
+            return asgi_app(app)
+        if hasattr(asgi_app, "__code__") and asgi_app.__code__.co_argcount >= 2:
+            return asgi_app(app, context=selected_context)
         return asgi_app(app)
 
     if protocol == "wsgi":
-        _set_strategy(app, protocol)
+        selected_context = _resolve_protocol_context(app, "wsgi", context=context)
+
+        if selected_context is None:
+            raise ProtocolUnavailableError("WSGI protocol requested, but no WSGI context found on app.")
 
         def application(environ, start_response):
-            return app.context.execute(environ=environ, start_response=start_response)
+            return selected_context.execute(environ=environ, start_response=start_response, container=app)
 
         return application
 
-    raise ValueError(f"Unsupported protocol '{protocol}'. Use 'mcp', 'mcp-asgi', 'mcp-wsgi', 'mcp-cli', 'asgi', or 'wsgi'.")
+    raise ValueError(
+        f"Unsupported protocol '{protocol}'. Use 'mcp', 'mcp-asgi', 'mcp-wsgi', 'mcp-cli', 'asgi', or 'wsgi'."
+    )
 
 
 __all__ = [

@@ -11,26 +11,57 @@ The preferred integration point is a Muscles context:
 ```python
 from muscles.core import ApplicationMeta, Context
 from muscles_mcp import McpStrategy
+from muscles.asgi import AsgiStrategy
 
 
 class App(metaclass=ApplicationMeta):
-    context = Context(McpStrategy)
+    asgi = Context(AsgiStrategy, transport="asgi")
+    mcp = Context(McpStrategy, transport=asgi)
+```
+
+For multi-profile deployments you can create several entrypoint contexts and bind MCP contexts to them directly:
+
+```python
+class App(metaclass=ApplicationMeta):
+    asgi_public = Context(AsgiStrategy, transport="asgi", params={"profile": "public"})
+    asgi_admin = Context(AsgiStrategy, transport="asgi", params={"profile": "admin"})
+
+    mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
+    mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
 ```
 
 `McpAdapter.from_application(app)` remains available as a compatibility facade
 for existing callers, but it delegates to the same strategy/projection logic.
 
+`transport` in MCP context declarations points to where MCP is attached:
+- direct protocol label (`"mcp"`, `"mcp-public"`, etc.);
+- entrypoint context object (`transport=asgi`),
+- context name string (`transport="asgi_public"`, `transport="asgi_admin"`).
+
+As a result, MCP context no longer needs `router`/`route` in `params`.
+The entrypoint context already carries the transport boundary.
+Keep route metadata (`route`, `route_prefix`, server visibility) on the
+entrypoint or MCP decorators (`McpServer`, `McpRouter`) and use MCP context params
+for strategy/profile metadata only.
+
+Example without `router` in MCP params:
+
+```python
+Context(McpStrategy, params={"protocol": "mcp", "router": mcp_public_router})  # old style
+Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})  # recommended
+```
+
 A complete user-application example is available in `examples/booking_app.py`.
 It uses a Muscles `Model` as the action `input_schema` and calls the action
-through `Context(McpStrategy)`.
+through an MCP context.
 
 ## Discovery
 
 MCP tools and resources are built from the Muscles inspect contract:
 
 ```python
-tools = app.context.execute(operation="list_tools")
-inspect_resource = app.context.execute(
+tools = app.mcp.execute(operation="list_tools")
+inspect_resource = app.mcp.execute(
     operation="read_resource",
     uri="muscles://app/inspect",
 )
@@ -43,7 +74,7 @@ inspect_resource = app.context.execute(
 Tool calls go back to Muscles core:
 
 ```python
-response = app.context.execute(
+response = app.mcp.execute(
     operation="call_tool",
     name="bookings.create",
     arguments={"title": "Call"},
@@ -59,7 +90,7 @@ core.
 You can pass a MCP request contract object directly:
 
 ```python
-response = app.context.execute(
+response = app.mcp.execute(
     request={
         "operation": "call_tool",
         "name": "bookings.create",
@@ -71,8 +102,8 @@ response = app.context.execute(
 The same shape is used for discovery:
 
 ```python
-tools = app.context.execute(request={"operation": "list_tools"})
-actions = app.context.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
+tools = app.mcp.execute(request={"operation": "list_tools"})
+actions = app.mcp.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
 ```
 
 ## Streaming

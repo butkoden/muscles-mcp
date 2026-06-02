@@ -27,7 +27,15 @@ RESOURCE_MAP = {
 class McpStrategy(BaseStrategy):
     """MCP protocol strategy bound to a Muscles application Context."""
 
-    def execute(self, *args, operation: str | None = None, request: dict | None = None, container=None, **kwargs):
+    def execute(
+            self,
+            *args,
+            operation: str | None = None,
+            request: dict | None = None,
+            container=None,
+            entrypoint_context=None,
+            **kwargs,
+        ):
         app = self._resolve_application(kwargs.pop("app", None) or container)
         if app is None:
             raise McpError(code="application_required", message="MCP strategy requires a Muscles application")
@@ -69,6 +77,7 @@ class McpStrategy(BaseStrategy):
                 call_request,
                 server=kwargs.get("server"),
                 token=kwargs.get("token"),
+                entrypoint_context=entrypoint_context,
             )
         raise McpError(code="unknown_operation", message=f"Unknown MCP operation: {operation}")
 
@@ -126,7 +135,14 @@ class McpStrategy(BaseStrategy):
             raise McpError(code="not_found", message=f"Unknown resource: {uri}")
         return McpResourceReadResult.from_json(uri, mapping[uri]).to_payload()
 
-    def call_tool(self, app, request: McpToolCallRequest, server: str | None = None, token: str | None = None) -> dict[str, Any]:
+    def call_tool(
+            self,
+            app,
+            request: McpToolCallRequest,
+            server: str | None = None,
+            token: str | None = None,
+            entrypoint_context=None,
+    ) -> dict[str, Any]:
         try:
             from muscles.core import ActionDispatcher
             from muscles.core import ActionPermissionDenied
@@ -137,7 +153,12 @@ class McpStrategy(BaseStrategy):
             action = self._lookup_action_contract(app, action_name)
             if action is not None and not self._action_allowed_for_server(action, server=server, token=token, enforce_token=True):
                 raise ActionPermissionDenied(action_name, "Action is not available for the requested MCP server")
-            result = ActionDispatcher(app).execute(action_name, payload["arguments"], transport="mcp")
+            result = ActionDispatcher(app).execute(
+                action_name,
+                payload["arguments"],
+                transport="mcp",
+                metadata=self._entrypoint_context_metadata(entrypoint_context),
+            )
             if result.is_stream:
                 return McpToolCallResult.stream(result.value).to_payload()
             return McpToolCallResult.success(result.value).to_payload()
@@ -181,6 +202,27 @@ class McpStrategy(BaseStrategy):
         else:
             return []
         return [McpStrategy._normalize_server_name(item) for item in values if McpStrategy._normalize_server_name(item)]
+
+    @staticmethod
+    def _entrypoint_context_metadata(entrypoint_context: Any) -> dict[str, Any]:
+        if entrypoint_context is None:
+            return {}
+
+        from muscles.core import Context
+
+        if isinstance(entrypoint_context, Context):
+            transport = entrypoint_context.transport
+            return {
+                "entrypoint_context": {
+                    "name": getattr(entrypoint_context, "_name", None),
+                    "transport": transport._name if isinstance(transport, Context) else transport,
+                },
+            }
+
+        if isinstance(entrypoint_context, str):
+            return {"entrypoint_context": {"name": entrypoint_context}}
+
+        return {"entrypoint_context": {"name": None, "transport": None, "raw": str(entrypoint_context)}}
 
     def _action_allowed_for_server(
         self,

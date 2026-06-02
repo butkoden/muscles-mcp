@@ -423,6 +423,86 @@ def test_mcp_strategy_accepts_operation_and_tool_payload_from_request_contract()
     }
 
 
+def test_mcp_strategy_passes_entrypoint_context_to_action_metadata():
+    app, _ = _build_mcp_app()
+    metadata_calls = []
+
+    @app.action(
+        name="bookings.meta",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["mcp"],
+    )
+    def bookings_meta(payload, context):
+        metadata_calls.append(context.metadata)
+        return {"title": payload["title"]}
+
+    response = app.context.execute(
+        operation="call_tool",
+        name="bookings.meta",
+        arguments={"title": "Context"},
+    )
+
+    assert response == {
+        "content": [
+            {
+                "type": "json",
+                "json": {"title": "Context"},
+            }
+        ]
+    }
+    assert metadata_calls == [
+        {
+            "entrypoint_context": {
+                "name": "context",
+                "transport": None,
+            },
+        }
+    ]
+
+
+def test_mcp_strategy_preserves_entrypoint_context_when_transport_is_nested_context():
+    asgi_public_context = Context(McpStrategy, transport="asgi")
+
+    class _AppWithNestedTransport(metaclass=ApplicationMeta):
+        asgi_public = asgi_public_context
+        mcp_private = Context(McpStrategy, transport=asgi_public_context)
+
+    app = _AppWithNestedTransport()
+    metadata = []
+
+    @app.action(
+        name="bookings.nested",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["mcp"],
+    )
+    def nested_booking(payload, context):
+        metadata.append(context.metadata)
+        return {"title": payload["title"]}
+
+    response = app.mcp_private.execute(
+        operation="call_tool",
+        name="bookings.nested",
+        arguments={"title": "Nested"},
+    )
+
+    assert response == {
+        "content": [
+            {
+                "type": "json",
+                "json": {"title": "Nested"},
+            }
+        ]
+    }
+    assert metadata == [
+        {
+            "entrypoint_context": {
+                "name": "mcp_private",
+                "transport": "asgi_public",
+            }
+        }
+    ]
+
+
 def test_mcp_strategy_rejects_unknown_operation_in_request_contract():
     app, _ = _build_mcp_app()
 

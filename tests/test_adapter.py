@@ -7,6 +7,8 @@ from muscles.core import (
 )
 
 from muscles_mcp import McpAdapter
+from muscles_mcp.strategy import McpStrategy
+from muscles_mcp.adapter import resolve_mcp_context
 
 
 class _EchoStrategy(BaseStrategy):
@@ -226,3 +228,92 @@ def test_mcp_state_is_scoped_to_application_instance():
 
     assert [tool["name"] for tool in tools_a] == ["bookings.create"]
     assert [tool["name"] for tool in tools_b] == ["tasks.create"]
+
+
+def test_resolve_mcp_context_matches_context_reference():
+    public = Context(_EchoStrategy)
+
+    class _App(metaclass=ApplicationMeta):
+        asgi_public = public
+        mcp_private = Context(_EchoStrategy, transport=public)
+
+    app = _App()
+
+    assert resolve_mcp_context(app, transport=public) is app.mcp_private
+    assert resolve_mcp_context(app, context="mcp_private") is app.mcp_private
+
+
+def test_resolve_mcp_context_matches_named_transport():
+    class _App(metaclass=ApplicationMeta):
+        asgi_public = Context(_EchoStrategy, transport="asgi")
+        mcp_public = Context(_EchoStrategy, transport="bridge")
+
+    app = _App()
+
+    assert resolve_mcp_context(app, transport="bridge") is app.mcp_public
+    assert resolve_mcp_context(app, context="mcp_public") is app.mcp_public
+
+
+def test_resolve_mcp_context_prefers_context_name_over_transport_selector():
+    web_public = Context(_EchoStrategy, transport="asgi")
+    web_admin = Context(_EchoStrategy, transport="asgi")
+
+    class _App(metaclass=ApplicationMeta):
+        asgi_public = web_public
+        asgi_admin = web_admin
+        mcp_private = Context(McpStrategy, transport=web_public, params={"profile": "private"})
+
+    app = _App()
+
+    assert resolve_mcp_context(app, transport="asgi_public") is app.asgi_public
+
+
+def test_resolve_mcp_context_raises_when_transport_ambiguous():
+    class _App(metaclass=ApplicationMeta):
+        asgi_public = Context(_EchoStrategy, transport="asgi")
+        asgi_admin = Context(_EchoStrategy, transport="asgi")
+
+    app = _App()
+
+    import pytest
+
+    with pytest.raises(ValueError, match="ambiguous"):
+        resolve_mcp_context(app, transport="asgi")
+
+
+def test_mcp_adapter_call_tool_carries_entrypoint_context_metadata_per_named_context():
+    class _App(metaclass=ApplicationMeta):
+        web_public = Context(_EchoStrategy, transport="asgi", params={"profile": "public"})
+        web_admin = Context(_EchoStrategy, transport="asgi", params={"profile": "admin"})
+        mcp_public = Context(McpStrategy, transport=web_public, params={"mcp_profile": "public"})
+        mcp_admin = Context(McpStrategy, transport="admin")
+
+    app = _App()
+    register_action(
+        app,
+        name="inspect",
+        input_schema={"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]},
+        transports=["mcp"],
+        handler=lambda payload, context: {
+            "entrypoint_name": context.metadata["entrypoint_context"]["name"],
+            "entrypoint_transport": context.metadata["entrypoint_context"]["transport"],
+            "received": payload["value"],
+        },
+    )
+
+    public = McpAdapter.from_application(app, context="mcp_public")
+    admin = McpAdapter.from_application(app, context=app.mcp_admin)
+
+    public_payload = public.call_tool("inspect", {"value": "one"})
+    admin_payload = admin.call_tool("inspect", {"value": "two"})
+
+    assert public_payload["content"][0]["json"] == {
+        "entrypoint_name": "mcp_public",
+        "entrypoint_transport": "web_public",
+        "received": "one",
+    }
+    assert admin_payload["content"][0]["json"] == {
+        "entrypoint_name": "mcp_admin",
+        "entrypoint_transport": "admin",
+        "received": "two",
+    }
