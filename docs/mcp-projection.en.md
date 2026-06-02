@@ -15,7 +15,7 @@ from muscles.asgi import AsgiStrategy
 
 
 class App(metaclass=ApplicationMeta):
-    asgi = Context(AsgiStrategy, transport="asgi")
+    asgi = Context(AsgiStrategy)
     mcp = Context(McpStrategy, transport=asgi)
 ```
 
@@ -23,8 +23,8 @@ For multi-profile deployments you can create several entrypoint contexts and bin
 
 ```python
 class App(metaclass=ApplicationMeta):
-    asgi_public = Context(AsgiStrategy, transport="asgi", params={"profile": "public"})
-    asgi_admin = Context(AsgiStrategy, transport="asgi", params={"profile": "admin"})
+    asgi_public = Context(AsgiStrategy, params={"profile": "public"})
+    asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
 
     mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
     mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
@@ -47,8 +47,7 @@ for strategy/profile metadata only.
 Example without `router` in MCP params:
 
 ```python
-Context(McpStrategy, params={"protocol": "mcp", "router": mcp_public_router})  # old style
-Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})  # recommended
+Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
 ```
 
 A complete user-application example is available in `examples/booking_app.py`.

@@ -1,5 +1,6 @@
 from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String
 from muscles_mcp import McpRouter, McpStrategy
+from muscles.asgi import AsgiStrategy
 
 
 class BookingCreate(Model):
@@ -8,10 +9,13 @@ class BookingCreate(Model):
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    # Public MCP entrypoint context.
-    context = Context(McpStrategy, transport="mcp")
-    # Additional MCP context for profile-specific wiring.
-    context_admin = Context(McpStrategy, transport="mcp-admin")
+    # MCP entrypoints bind to concrete entrypoint contexts.
+    asgi_public = Context(AsgiStrategy, params={"profile": "public"})
+    asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
+
+    mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
+    mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
+
     mcp = McpRouter(route_prefix="/api")
 
 
@@ -34,10 +38,10 @@ def create_booking(payload, context):
 
 
 if __name__ == "__main__":
-    print(app.context.execute(operation="list_tools"))
-    print(app.context_admin.execute(operation="list_tools"))
+    print(app.mcp_public.execute(operation="list_tools"))
+    print(app.mcp_admin.execute(operation="list_tools"))
     print(
-        app.context.execute(
+        app.mcp_public.execute(
             operation="call_tool",
             name="bookings.create",
             arguments={"title": "Discovery call", "guest_count": 2},

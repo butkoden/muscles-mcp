@@ -31,7 +31,8 @@ Implemented MCP projection as a Muscles application strategy:
 - `McpStrategy` подключается через `Context(McpStrategy, transport=...)`:
   - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
   - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
-  - `transport="mcp"` — прямой selector (без отдельного entrypoint-контекста).
+  - `transport="mcp"` — опциональный fallback для сценариев совместимости (обычно не нужен).
+- `McpRouter`/`McpServer` — это удобный projection-only DSL для декораторной регистрации MCP-маршрутов, а не сетевой роутер/сервер.
 - `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
@@ -137,12 +138,12 @@ from muscles.asgi import AsgiStrategy
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    asgi = Context(AsgiStrategy, transport="asgi")
+    asgi = Context(AsgiStrategy)
     mcp = McpRouter(route_prefix="/api")
     mcp_context = Context(McpStrategy, transport=asgi)
 
     # Example with explicit binding without router in MCP context params:
-    # asgi_admin = Context(AsgiStrategy, transport="asgi", params={"profile": "admin"})
+    # asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
     # mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
 
 

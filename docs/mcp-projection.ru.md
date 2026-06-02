@@ -16,7 +16,7 @@ from muscles.asgi import AsgiStrategy
 
 class App(metaclass=ApplicationMeta):
     # Контекст MCP может ссылаться на entrypoint-контекст (например asgi).
-    asgi = Context(AsgiStrategy, transport="asgi")
+    asgi = Context(AsgiStrategy)
     mcp = Context(McpStrategy, transport=asgi)
 ```
 
@@ -25,8 +25,8 @@ class App(metaclass=ApplicationMeta):
 
 ```python
 class App(metaclass=ApplicationMeta):
-    asgi_public = Context(AsgiStrategy, transport="asgi", params={"profile": "public"})
-    asgi_admin = Context(AsgiStrategy, transport="asgi", params={"profile": "admin"})
+    asgi_public = Context(AsgiStrategy, params={"profile": "public"})
+    asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
 
     mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
     mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
@@ -45,8 +45,7 @@ class App(metaclass=ApplicationMeta):
 Пример без `router` в параметрах MCP-контекста:
 
 ```python
-Context(McpStrategy, params={"protocol": "mcp", "router": mcp_public_router})  # устаревший вариант
-Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})  # рекомендуемый вариант
+Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
 ```
 
 Полный пример пользовательского приложения есть в

@@ -91,31 +91,32 @@ def resolve_mcp_context(
             raise ValueError(f"Application has no context '{context}'")
         raise TypeError("Context selector must be a context name (str) or Context instance")
 
-    if isinstance(transport, str):
+    if transport is not None and isinstance(transport, str):
         named_context = getattr(app, transport, None)
         if isinstance(named_context, Context):
             return named_context
 
-        transport_targets = [
-            (name, value)
-            for name, value in _iter_app_contexts(app)
-            if _matches_transport(value.transport, transport)
-        ]
-
-        if len(transport_targets) == 1:
-            return transport_targets[0][1]
-        if len(transport_targets) > 1:
-            names = ", ".join(name for name, _ in transport_targets)
-            raise ValueError(
-                f"Context transport selector '{transport}' is ambiguous ({names}). "
-                "Pass explicit context name or Context instance as context=..."
-            )
-    else:
-        for _, value in _iter_app_contexts(app):
-            if transport is None:
-                break
+    transport_targets = []
+    if transport is not None:
+        for name, value in _iter_app_contexts(app):
             if _matches_transport(value.transport, transport):
-                return value
+                transport_targets.append((name, value))
+
+    if transport is None:
+        if default is not None:
+            fallback = getattr(app, default, None)
+            if isinstance(fallback, Context):
+                return fallback
+        return None
+
+    if len(transport_targets) == 1:
+        return transport_targets[0][1]
+    if len(transport_targets) > 1:
+        names = ", ".join(name for name, _ in transport_targets)
+        raise ValueError(
+            f"Context transport selector '{transport}' is ambiguous ({names}). "
+            "Pass explicit context name or Context instance as context=..."
+        )
 
     if default is not None:
         fallback = getattr(app, default, None)
