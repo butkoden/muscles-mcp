@@ -8,7 +8,7 @@ from muscles.core import (
     StreamEvent,
     StreamResult,
     Column,
-    register_action,
+    _register_action,
 )
 
 import pytest
@@ -46,7 +46,7 @@ def _build_mcp_app():
             "guest_count": payload.get("guest_count", 1),
         }
 
-    register_action(
+    _register_action(
         app,
         name="bookings.create",
         description="Create booking",
@@ -120,7 +120,7 @@ def test_mcp_strategy_auto_builds_schema_for_model_input():
         context = Context(McpStrategy)
 
     app = _ModelApp()
-    register_action(
+    _register_action(
         app,
         name="bookings.model",
         description="Create booking from model",
@@ -166,7 +166,7 @@ def test_mcp_metadata_registration_supports_route_metadata():
 
     app = _RoutesApp()
 
-    register_action(
+    _register_action(
         app,
         name="bookings.create",
         description="Create booking",
@@ -231,7 +231,7 @@ def test_mcp_metadata_registration_accepts_model_schema_without_side_effects():
 
     app = _RoutesModelApp()
 
-    register_action(
+    _register_action(
         app,
         name="bookings.model",
         input_schema=build_model_json_schema(BookingCreate),
@@ -286,7 +286,7 @@ def test_mcp_metadata_registration_supports_server_filtering_and_tokens():
 
     app = _McpServerApp()
 
-    register_action(
+    _register_action(
         app,
         name="bookings.create",
         input_schema=build_model_json_schema(BookingCreate),
@@ -305,7 +305,7 @@ def test_mcp_metadata_registration_supports_server_filtering_and_tokens():
         },
     )
 
-    register_action(
+    _register_action(
         app,
         name="bookings.health",
         input_schema={"type": "object", "properties": {}},
@@ -359,7 +359,7 @@ def test_mcp_strategy_state_is_scoped_to_container_application():
         context = Context(McpStrategy)
 
     app_b = _OtherMcpApp()
-    register_action(
+    _register_action(
         app_b,
         name="tasks.create",
         input_schema={"type": "object", "properties": {}},
@@ -376,7 +376,7 @@ def test_mcp_strategy_state_is_scoped_to_container_application():
 
 def test_mcp_strategy_lists_stream_capability_from_core_inspect_contract():
     app, _ = _build_mcp_app()
-    register_action(
+    _register_action(
         app,
         name="bookings.stream",
         input_schema={"type": "object", "properties": {}},
@@ -407,7 +407,7 @@ def test_mcp_strategy_projects_core_stream_events_without_second_handler_call():
         )
 
     app, _ = _build_mcp_app()
-    register_action(
+    _register_action(
         app,
         name="bookings.stream_call",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -441,7 +441,7 @@ def test_mcp_adapter_projects_stream_error_event_as_mcp_friendly_error_response(
         return StreamResult(source=source())
 
     app, _ = _build_mcp_app()
-    register_action(
+    _register_action(
         app,
         name="bookings.stream_error",
         input_schema=BOOKING_INPUT_SCHEMA,

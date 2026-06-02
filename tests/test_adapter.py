@@ -3,7 +3,7 @@ from muscles.core import (
     ApplicationMeta,
     BaseStrategy,
     Context,
-    register_action,
+    _register_action,
 )
 
 from muscles_mcp import McpAdapter
@@ -45,7 +45,7 @@ def _build_app(handler=None, rules=None):
             "guest_count": payload.get("guest_count", 1),
         }
 
-    register_action(
+    _register_action(
         app,
         name="bookings.create",
         description="Create booking",
@@ -88,20 +88,20 @@ def test_mcp_lists_only_actions_open_to_mcp_transport():
         context = Context(_EchoStrategy)
 
     app = _App()
-    register_action(
+    _register_action(
         app,
         name="bookings.http_only",
         input_schema=BOOKING_INPUT_SCHEMA,
         transports=["http"],
         handler=lambda payload, context: {"transport": context.transport},
     )
-    register_action(
+    _register_action(
         app,
         name="bookings.open",
         input_schema=BOOKING_INPUT_SCHEMA,
         handler=lambda payload, context: {"transport": context.transport},
     )
-    register_action(
+    _register_action(
         app,
         name="bookings.mcp",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -171,7 +171,7 @@ def test_mcp_call_tool_denies_action_not_open_to_mcp_transport():
         context = Context(_EchoStrategy)
 
     app = _App()
-    register_action(
+    _register_action(
         app,
         name="bookings.http_only",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -195,7 +195,7 @@ def test_mcp_async_handler_returns_execution_error():
     async def create_booking(payload, context):
         return {"title": payload["title"]}
 
-    register_action(
+    _register_action(
         app,
         name="bookings.async",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -216,7 +216,7 @@ def test_mcp_state_is_scoped_to_application_instance():
         context = Context(_EchoStrategy)
 
     app_b = _OtherApp()
-    register_action(
+    _register_action(
         app_b,
         name="tasks.create",
         input_schema={"type": "object", "properties": {}},
@@ -289,7 +289,7 @@ def test_mcp_adapter_call_tool_carries_entrypoint_context_metadata_per_named_con
         mcp_admin = Context(McpStrategy, transport="admin")
 
     app = _App()
-    register_action(
+    _register_action(
         app,
         name="inspect",
         input_schema={"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]},

@@ -1,4 +1,4 @@
-from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, register_action
+from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, _register_action
 from muscles_mcp import McpStrategy, build_model_json_schema
 from muscles.asgi import AsgiStrategy
 
@@ -34,7 +34,7 @@ def _mcp_metadata(route: str, route_prefix: str, name: str, server: str, token: 
     }
 
 
-register_action(
+_register_action(
     app,
     name="bookings.create",
     description="Create a booking request",
@@ -50,7 +50,7 @@ register_action(
 )
 
 
-register_action(
+_register_action(
     app,
     name="admin.health",
     input_schema={"type": "object", "properties": {}},

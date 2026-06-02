@@ -132,8 +132,8 @@ connected to the Muscles context. MCP reads the contract through
 
 ```python
 from muscles_mcp import McpAdapter, McpStrategy
-
-from muscles import ApplicationMeta, Context, register_action
+from muscles import ApplicationMeta, Context
+from muscles.core import _register_action  # internal API: used here only for docs demo
 from muscles.asgi import AsgiStrategy
 
 
@@ -149,7 +149,7 @@ class BookingApp(metaclass=ApplicationMeta):
 app = BookingApp()
 
 
-register_action(
+_register_action(
     app,
     name="bookings.create",
     description="Create a booking request",
@@ -333,7 +333,7 @@ def denied_handler(payload, context):
     raise ActionPermissionDenied(context.action.name, "Denied by Muscles rules")
 
 
-register_action(app, name="bookings.create", handler=denied_handler)
+_register_action(app, name="bookings.create", handler=denied_handler)
 secure_adapter = McpAdapter.from_application(app)
 denied = secure_adapter.call_tool("bookings.create", {"title": "Call"})
 

@@ -2,7 +2,7 @@ import json
 import sys
 import types
 
-from muscles.core import ApplicationMeta, BaseStrategy, Context, register_action
+from muscles.core import ApplicationMeta, BaseStrategy, Context, _register_action
 
 from muscles_mcp import (
     McpAdapter,
@@ -25,7 +25,7 @@ def _build_app():
 
     app = _App()
 
-    register_action(
+    _register_action(
         app,
         name="ping",
         input_schema={"type": "object", "properties": {}},
@@ -59,7 +59,7 @@ def test_make_protocol_app_can_use_named_context():
         mcp_private = Context(_EchoStrategy, transport="asgi")
 
     app = _McpNamedContextApp()
-    register_action(
+    _register_action(
         app,
         name="ping",
         input_schema={"type": "object", "properties": {}},
