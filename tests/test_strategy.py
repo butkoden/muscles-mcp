@@ -1,4 +1,15 @@
-from muscles.core import ApplicationMeta, BaseStrategy, Context, StreamEvent, StreamResult, register_action
+from muscles.core import (
+    ApplicationMeta,
+    BaseStrategy,
+    Context,
+    Integer,
+    Model,
+    String,
+    StreamEvent,
+    StreamResult,
+    Column,
+    register_action,
+)
 
 import pytest
 
@@ -78,6 +89,43 @@ def test_mcp_strategy_calls_tool_through_application_context():
             }
         ]
     }
+
+
+def test_mcp_strategy_auto_builds_schema_for_model_input():
+    class BookingCreate(Model):
+        title = Column(String)
+        guest_count = Column(Integer, default=1)
+
+    class _ModelApp(metaclass=ApplicationMeta):
+        context = Context(McpStrategy)
+
+    app = _ModelApp()
+    register_action(
+        app,
+        name="bookings.model",
+        description="Create booking from model",
+        input_schema=BookingCreate,
+        handler=lambda payload, context: {"id": 1, "payload": payload},
+    )
+
+    tools = app.context.execute(operation="list_tools")
+
+    assert tools == [
+        {
+            "name": "bookings.model",
+            "description": "Create booking from model",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "guest_count": {"type": "integer", "default": 1},
+                },
+            },
+        }
+    ]
+
+    inspected = app.context.execute(operation="read_resource", uri="muscles://app/actions")["contents"][0]["json"]
+    assert inspected[0]["input_schema"]["properties"]["title"]["type"] == "string"
 
 
 def test_mcp_adapter_is_facade_over_strategy_projection():

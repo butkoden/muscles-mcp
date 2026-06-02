@@ -12,6 +12,7 @@ from .schema.mcp import (
     McpToolCallResult,
     McpToolDescriptor,
 )
+from .utils import build_model_json_schema
 
 
 RESOURCE_MAP = {
@@ -84,8 +85,9 @@ class McpStrategy(BaseStrategy):
             raise McpError(code="invalid_request", message="Invalid MCP request payload", data={"error": str(exc)})
 
     def list_tools(self, app) -> list[dict[str, Any]]:
+        contract = self._contract_with_mcp_schemas(app)
         tools: list[dict[str, Any]] = []
-        for action in self._contract(app).get("actions", []):
+        for action in contract.get("actions", []):
             name = action.get("name") or action.get("action")
             if not name:
                 continue
@@ -103,7 +105,7 @@ class McpStrategy(BaseStrategy):
         ]
 
     def read_resource(self, app, uri: str) -> dict[str, Any]:
-        contract = self._contract(app)
+        contract = self._contract_with_mcp_schemas(app)
         mapping = {
             "muscles://app/inspect": contract,
             "muscles://app/actions": contract.get("actions", []),
@@ -139,6 +141,61 @@ class McpStrategy(BaseStrategy):
         if isinstance(app, type):
             return app()
         return app
+
+    @staticmethod
+    def _coerce_model_schema(schema: Any) -> Any:
+        if schema is None:
+            return None
+        if isinstance(schema, type) and hasattr(schema, "columns"):
+            return build_model_json_schema(schema)
+        if hasattr(schema, "columns"):
+            return build_model_json_schema(schema.__class__)
+        return schema
+
+    @classmethod
+    def _contract_with_mcp_schemas(cls, app) -> dict[str, Any]:
+        contract = dict(cls._contract(app))
+        action_lookup = cls._build_action_lookup(app)
+        actions = []
+        for action in contract.get("actions", []):
+            if not isinstance(action, dict):
+                actions.append(action)
+                continue
+            coerced = dict(action)
+            action_name = action.get("name") or action.get("action")
+            source_action = action_lookup.get(action_name) if action_name else None
+            if source_action is not None:
+                if "input_schema" in action:
+                    raw_input_schema = getattr(source_action, "raw_input_schema", None)
+                    if raw_input_schema is None and isinstance(source_action, dict):
+                        raw_input_schema = source_action.get("raw_input_schema")
+                    coerced["input_schema"] = cls._coerce_model_schema(raw_input_schema or coerced["input_schema"])
+                if "output_schema" in action:
+                    raw_output_schema = getattr(source_action, "raw_output_schema", None)
+                    if raw_output_schema is None and isinstance(source_action, dict):
+                        raw_output_schema = source_action.get("raw_output_schema")
+                    coerced["output_schema"] = cls._coerce_model_schema(raw_output_schema or coerced["output_schema"])
+            actions.append(coerced)
+        contract["actions"] = actions
+        return contract
+
+    @staticmethod
+    def _build_action_lookup(app) -> dict[str, Any]:
+        try:
+            from muscles.core import get_application_registry
+        except Exception:
+            return {}
+
+        registry = get_application_registry(app, create=False)
+        lookup: dict[str, Any] = {}
+        if registry is None:
+            return lookup
+
+        for action in getattr(registry, "actions", []) or []:
+            name = getattr(action, "name", None)
+            if name:
+                lookup[name] = action
+        return lookup
 
     @staticmethod
     def _contract(app) -> dict[str, Any]:

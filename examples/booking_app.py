@@ -1,5 +1,5 @@
 from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, register_action
-from muscles_mcp import McpStrategy, build_model_json_schema
+from muscles_mcp import McpStrategy
 
 
 class BookingCreate(Model):
@@ -27,7 +27,7 @@ register_action(
     app,
     name="bookings.create",
     description="Create a booking request",
-    input_schema=build_model_json_schema(BookingCreate),
+    input_schema=BookingCreate,
     output_schema={
         "type": "object",
         "properties": {

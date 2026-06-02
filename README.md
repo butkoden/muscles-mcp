@@ -172,8 +172,8 @@ adapter = McpAdapter.from_application(app)
 
 See [examples/booking_app.py](examples/booking_app.py) for a complete
 application example that uses a Muscles `Model` as the action input schema.
-You can use `build_model_json_schema` from `muscles_mcp` to generate such schemas
-directly.
+MCP now normalizes Model-based schemas during execution automatically.
+If you need a standalone schema builder, use `build_model_json_schema`.
 
 ### 2.5. One app for MCP, ASGI and WSGI
 
