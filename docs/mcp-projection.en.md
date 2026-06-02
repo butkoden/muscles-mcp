@@ -41,7 +41,7 @@ for existing callers, but it delegates to the same strategy/projection logic.
 As a result, MCP context no longer needs `router`/`route` in `params`.
 The entrypoint context already carries the transport boundary.
 Keep route metadata (`route`, `route_prefix`, server visibility) on the
-entrypoint or MCP decorators (`McpServer`, `McpRouter`) and use MCP context params
+entrypoint contexts and/or `metadata["mcp"]` on action registration, and use MCP context params
 for strategy/profile metadata only.
 
 Example without `router` in MCP params:

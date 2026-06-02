@@ -13,7 +13,7 @@ from muscles.core import (
 
 import pytest
 
-from muscles_mcp import McpAdapter, McpError, McpRouter, McpStrategy
+from muscles_mcp import McpAdapter, McpError, McpStrategy, build_model_json_schema
 
 
 class _EchoStrategy(BaseStrategy):
@@ -55,6 +55,26 @@ def _build_mcp_app():
         handler=create_booking,
     )
     return app, calls
+
+
+def _mcp_metadata(
+    route: str,
+    full_route: str,
+    name: str,
+    server: str,
+    token: str | None = None,
+) -> dict:
+    return {
+        "mcp": {
+            "route": route,
+            "full_route": full_route,
+            "name": name,
+            "transport": "mcp",
+            "server": server,
+            "servers": [server],
+            **({"token": token} if token is not None else {}),
+        }
+    }
 
 
 def test_mcp_strategy_lists_tools_from_application_context():
@@ -140,19 +160,30 @@ def test_mcp_adapter_is_facade_over_strategy_projection():
     assert response["content"][0]["json"]["title"] == "Facade"
 
 
-def test_mcp_router_registers_action_with_route_metadata():
+def test_mcp_metadata_registration_supports_route_metadata():
     class _RoutesApp(metaclass=ApplicationMeta):
         context = Context(McpStrategy)
-        mcp = McpRouter(route_prefix="/api")
 
     app = _RoutesApp()
 
-    @app.mcp(route="/bookings/create", description="Create booking", input_schema=BOOKING_INPUT_SCHEMA)
-    def create_booking(payload, context):
-        return {
+    register_action(
+        app,
+        name="bookings.create",
+        description="Create booking",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["mcp"],
+        metadata=_mcp_metadata(
+            route="/bookings/create",
+            full_route="/api/bookings/create",
+            name="bookings.create",
+            server="public",
+            token="SIMSIM-PUBLIC",
+        ),
+        handler=lambda payload, context: {
             "title": payload["title"],
             "guest_count": payload.get("guest_count", 1),
-        }
+        },
+    )
 
     tools = app.context.execute(operation="list_tools")
     assert tools == [
@@ -190,20 +221,29 @@ def test_mcp_router_registers_action_with_route_metadata():
     }
 
 
-def test_mcp_router_accepts_model_schema_and_runs_validation_without_core_to_json_side_effects():
+def test_mcp_metadata_registration_accepts_model_schema_without_side_effects():
     class BookingCreate(Model):
         title = Column(String, nullable=False, min_length=1)
         guest_count = Column(Integer, default=1)
 
     class _RoutesModelApp(metaclass=ApplicationMeta):
         context = Context(McpStrategy)
-        mcp = McpRouter(route_prefix="/api")
 
     app = _RoutesModelApp()
 
-    @app.mcp(route="/bookings/model", name="bookings.model", input_schema=BookingCreate)
-    def create_booking_model(payload, context):
-        return payload
+    register_action(
+        app,
+        name="bookings.model",
+        input_schema=build_model_json_schema(BookingCreate),
+        transports=["mcp"],
+        metadata=_mcp_metadata(
+            route="/bookings/model",
+            full_route="/api/bookings/model",
+            name="bookings.model",
+            server="public",
+        ),
+        handler=lambda payload, context: payload,
+    )
 
     tools = app.context.execute(operation="list_tools")
     assert tools == [
@@ -236,32 +276,49 @@ def test_mcp_router_accepts_model_schema_and_runs_validation_without_core_to_jso
     }
 
 
-def test_mcp_router_server_api_registers_actions_and_supports_server_level_filter_and_token():
+def test_mcp_metadata_registration_supports_server_filtering_and_tokens():
     class BookingCreate(Model):
         title = Column(String, nullable=False, min_length=1)
         guest_count = Column(Integer, default=1)
 
     class _McpServerApp(metaclass=ApplicationMeta):
         context = Context(McpStrategy)
-        mcp = McpRouter(route_prefix="/api")
 
     app = _McpServerApp()
 
-    @app.mcp.server(name="public", route_prefix="/mcp/public", token="SIMSIM-PUBLIC")
-    def public_server():
-        pass
-
-    @public_server.action(route="/bookings/create", name="bookings.create", input_schema=BookingCreate)
-    def create_booking(payload, context):
-        return {
+    register_action(
+        app,
+        name="bookings.create",
+        input_schema=build_model_json_schema(BookingCreate),
+        transports=["mcp"],
+        metadata=_mcp_metadata(
+            route="/bookings/create",
+            full_route="/mcp/public/bookings/create",
+            name="bookings.create",
+            server="public",
+            token="SIMSIM-PUBLIC",
+        ),
+        handler=lambda payload, context: {
             "title": payload["title"],
             "guest_count": payload.get("guest_count", 1),
             "server": payload.get("server"),
-        }
+        },
+    )
 
-    @public_server.action(route="/bookings/list", name="bookings.health", input_schema={"type": "object", "properties": {}})
-    def list_booking(payload, context):
-        return {"ok": True}
+    register_action(
+        app,
+        name="bookings.health",
+        input_schema={"type": "object", "properties": {}},
+        transports=["mcp"],
+        metadata=_mcp_metadata(
+            route="/bookings/list",
+            full_route="/mcp/public/bookings/list",
+            name="bookings.health",
+            server="public",
+            token="SIMSIM-PUBLIC",
+        ),
+        handler=lambda payload, context: {"ok": True},
+    )
 
     public_tools = app.context.execute(operation="list_tools", server="public")
     assert [tool["name"] for tool in public_tools] == ["bookings.create", "bookings.health"]

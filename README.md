@@ -32,7 +32,7 @@ Implemented MCP projection as a Muscles application strategy:
   - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
   - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
   - `transport="mcp"` — опциональный fallback для сценариев совместимости (обычно не нужен).
-- `McpRouter`/`McpServer` — это удобный projection-only DSL для декораторной регистрации MCP-маршрутов, а не сетевой роутер/сервер.
+- `McpRouter`/`McpServer` removed from public API: register MCP actions через core `register_action` с `metadata["mcp"]`.
 - `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
@@ -131,7 +131,7 @@ connected to the Muscles context. MCP reads the contract through
 `inspect_application(app)` and executes tools through `ActionDispatcher`.
 
 ```python
-from muscles_mcp import McpAdapter, McpRouter, McpStrategy
+from muscles_mcp import McpAdapter, McpStrategy
 
 from muscles import ApplicationMeta, Context, register_action
 from muscles.asgi import AsgiStrategy
@@ -139,7 +139,6 @@ from muscles.asgi import AsgiStrategy
 
 class BookingApp(metaclass=ApplicationMeta):
     asgi = Context(AsgiStrategy)
-    mcp = McpRouter(route_prefix="/api")
     mcp_context = Context(McpStrategy, transport=asgi)
 
     # Example with explicit binding without router in MCP context params:
@@ -153,6 +152,7 @@ app = BookingApp()
 register_action(
     app,
     name="bookings.create",
+    description="Create a booking request",
     input_schema={
         "type": "object",
         "properties": {
@@ -161,35 +161,26 @@ register_action(
         },
         "required": ["title"],
     },
+    transports=["mcp"],
+    metadata={
+        "mcp": {
+            "route": "/create",
+            "full_route": "/bookings/create",
+            "name": "bookings.create",
+            "transport": "mcp",
+            "server": "public",
+            "servers": ["public"],
+            "token": "SIMSIM-PUBLIC",
+        }
+    },
     handler=lambda payload, context: {
         "id": 1,
         "title": payload["title"],
         "guest_count": payload.get("guest_count", 1),
         "status": "created",
+        "transport": context.transport,
     },
 )
-
-
-# Alternative style for route-first registration (controller-like ergonomics)
-public = app.mcp.server(name="public", route_prefix="/bookings", token="SIMSIM-PUBLIC")
-
-
-@public.action(route="/create", name="bookings.create", description="Create a booking request")
-def create_booking(payload, context):
-    return {
-        "id": 1,
-        "title": payload["title"],
-        "guest_count": payload.get("guest_count", 1),
-        "status": "created",
-    }
-
-
-admin = app.mcp.server(name="admin", route_prefix="/admin")
-
-
-@admin.action(route="/health", name="admin.health")
-def admin_health(payload, context):
-    return {"ok": True}
 
 
 tools = app.mcp_context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")

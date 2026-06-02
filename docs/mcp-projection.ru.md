@@ -40,7 +40,7 @@ class App(metaclass=ApplicationMeta):
 - `transport=<other_context>` или `transport="asgi_public"` / `transport="asgi_admin"` для привязки к конкретному entrypoint-контексту.
 
 Важно: для MCP-контекста `router` больше не нужен: transport уже указывает на entrypoint.
-Маршрутизация (`route`/`route_prefix`/`servers`) задается в entrypoint-контексте или в MCP-декораторах (`McpServer`/`McpRouter`), а MCP-контекст хранит только выбор стратегии/профиля.
+Маршрутизация (`route`/`route_prefix`/`servers`) задается в entrypoint-контексте или в `metadata["mcp"]` при регистрации action, а MCP-контекст хранит только выбор стратегии/профиля.
 
 Пример без `router` в параметрах MCP-контекста:
 

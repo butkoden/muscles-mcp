@@ -1,5 +1,5 @@
-from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String
-from muscles_mcp import McpRouter, McpStrategy
+from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, register_action
+from muscles_mcp import McpStrategy, build_model_json_schema
 from muscles.asgi import AsgiStrategy
 
 
@@ -16,25 +16,50 @@ class BookingApp(metaclass=ApplicationMeta):
     mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
     mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
 
-    mcp = McpRouter(route_prefix="/api")
-
 
 app = BookingApp()
 
 
-@app.mcp.server(name="public", route_prefix="/bookings", token="SIMSIM-PUBLIC")
-def public_server():
-    pass
-
-
-@public_server.action(route="/create", name="bookings.create", input_schema=BookingCreate)
-def create_booking(payload, context):
+def _mcp_metadata(route: str, route_prefix: str, name: str, server: str, token: str | None = None):
     return {
+        "mcp": {
+            "route": route,
+            "full_route": f"{route_prefix.rstrip('/')}/{route.lstrip('/')}".replace("//", "/"),
+            "name": name,
+            "transport": "mcp",
+            "server": server,
+            "servers": [server],
+            **({"token": token} if token else {}),
+        }
+    }
+
+
+register_action(
+    app,
+    name="bookings.create",
+    description="Create a booking request",
+    input_schema=build_model_json_schema(BookingCreate),
+    transports=["mcp"],
+    metadata=_mcp_metadata("/create", "/bookings", "bookings.create", "public", "SIMSIM-PUBLIC"),
+    handler=lambda payload, context: {
         "id": 1,
         "title": payload["title"],
         "guest_count": payload.get("guest_count", 1),
         "transport": context.transport,
-    }
+    },
+)
+
+
+register_action(
+    app,
+    name="admin.health",
+    input_schema={"type": "object", "properties": {}},
+    transports=["mcp"],
+    metadata=_mcp_metadata("/health", "/admin", "admin.health", "admin"),
+    handler=lambda payload, context: {
+        "ok": True,
+    },
+)
 
 
 if __name__ == "__main__":
