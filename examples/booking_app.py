@@ -1,4 +1,4 @@
-from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, _register_action
+from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String
 from muscles_mcp import McpStrategy, build_model_json_schema
 from muscles.asgi import AsgiStrategy
 
@@ -34,32 +34,30 @@ def _mcp_metadata(route: str, route_prefix: str, name: str, server: str, token: 
     }
 
 
-_register_action(
-    app,
+@app.action(
     name="bookings.create",
     description="Create a booking request",
     input_schema=build_model_json_schema(BookingCreate),
     transports=["mcp"],
     metadata=_mcp_metadata("/create", "/bookings", "bookings.create", "public", "SIMSIM-PUBLIC"),
-    handler=lambda payload, context: {
+)
+def create_booking(payload, context):
+    return {
         "id": 1,
         "title": payload["title"],
         "guest_count": payload.get("guest_count", 1),
         "transport": context.transport,
-    },
-)
+    }
 
 
-_register_action(
-    app,
+@app.action(
     name="admin.health",
     input_schema={"type": "object", "properties": {}},
     transports=["mcp"],
     metadata=_mcp_metadata("/health", "/admin", "admin.health", "admin"),
-    handler=lambda payload, context: {
-        "ok": True,
-    },
 )
+def admin_health(payload, context):
+    return {"ok": True}
 
 
 if __name__ == "__main__":

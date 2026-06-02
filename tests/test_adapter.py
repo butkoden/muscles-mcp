@@ -3,7 +3,6 @@ from muscles.core import (
     ApplicationMeta,
     BaseStrategy,
     Context,
-    _register_action,
 )
 
 from muscles_mcp import McpAdapter
@@ -30,6 +29,11 @@ BOOKING_INPUT_SCHEMA = {
 }
 
 
+def add_action(app, **options):
+    handler = options.pop("handler")
+    app.action(**options)(handler)
+
+
 def _build_app(handler=None, rules=None):
     class _App(metaclass=ApplicationMeta):
         context = Context(_EchoStrategy)
@@ -45,7 +49,7 @@ def _build_app(handler=None, rules=None):
             "guest_count": payload.get("guest_count", 1),
         }
 
-    _register_action(
+    add_action(
         app,
         name="bookings.create",
         description="Create booking",
@@ -88,20 +92,20 @@ def test_mcp_lists_only_actions_open_to_mcp_transport():
         context = Context(_EchoStrategy)
 
     app = _App()
-    _register_action(
+    add_action(
         app,
         name="bookings.http_only",
         input_schema=BOOKING_INPUT_SCHEMA,
         transports=["http"],
         handler=lambda payload, context: {"transport": context.transport},
     )
-    _register_action(
+    add_action(
         app,
         name="bookings.open",
         input_schema=BOOKING_INPUT_SCHEMA,
         handler=lambda payload, context: {"transport": context.transport},
     )
-    _register_action(
+    add_action(
         app,
         name="bookings.mcp",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -171,7 +175,7 @@ def test_mcp_call_tool_denies_action_not_open_to_mcp_transport():
         context = Context(_EchoStrategy)
 
     app = _App()
-    _register_action(
+    add_action(
         app,
         name="bookings.http_only",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -195,7 +199,7 @@ def test_mcp_async_handler_returns_execution_error():
     async def create_booking(payload, context):
         return {"title": payload["title"]}
 
-    _register_action(
+    add_action(
         app,
         name="bookings.async",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -216,7 +220,7 @@ def test_mcp_state_is_scoped_to_application_instance():
         context = Context(_EchoStrategy)
 
     app_b = _OtherApp()
-    _register_action(
+    add_action(
         app_b,
         name="tasks.create",
         input_schema={"type": "object", "properties": {}},
@@ -289,7 +293,7 @@ def test_mcp_adapter_call_tool_carries_entrypoint_context_metadata_per_named_con
         mcp_admin = Context(McpStrategy, transport="admin")
 
     app = _App()
-    _register_action(
+    add_action(
         app,
         name="inspect",
         input_schema={"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]},
