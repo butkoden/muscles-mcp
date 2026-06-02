@@ -32,7 +32,7 @@ Implemented MCP projection as a Muscles application strategy:
   - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
   - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
   - `transport="mcp"` — опциональный fallback для сценариев совместимости (обычно не нужен).
-- `McpRouter`/`McpServer` removed from public API: register MCP actions через core `register_action` с `metadata["mcp"]`.
+- `McpRouter`/`McpServer` removed from public API: register MCP actions through the core `@app.action` decorator with `metadata["mcp"]`.
 - `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
@@ -133,7 +133,6 @@ connected to the Muscles context. MCP reads the contract through
 ```python
 from muscles_mcp import McpAdapter, McpStrategy
 from muscles import ApplicationMeta, Context
-from muscles.core import _register_action  # internal API: used here only for docs demo
 from muscles.asgi import AsgiStrategy
 
 
@@ -149,8 +148,7 @@ class BookingApp(metaclass=ApplicationMeta):
 app = BookingApp()
 
 
-_register_action(
-    app,
+@app.action(
     name="bookings.create",
     description="Create a booking request",
     input_schema={
@@ -173,14 +171,15 @@ _register_action(
             "token": "SIMSIM-PUBLIC",
         }
     },
-    handler=lambda payload, context: {
+)
+def create_booking(payload, context):
+    return {
         "id": 1,
         "title": payload["title"],
         "guest_count": payload.get("guest_count", 1),
         "status": "created",
         "transport": context.transport,
-    },
-)
+    }
 
 
 tools = app.mcp_context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")
@@ -333,7 +332,7 @@ def denied_handler(payload, context):
     raise ActionPermissionDenied(context.action.name, "Denied by Muscles rules")
 
 
-_register_action(app, name="bookings.create", handler=denied_handler)
+app.action(name="bookings.create")(denied_handler)
 secure_adapter = McpAdapter.from_application(app)
 denied = secure_adapter.call_tool("bookings.create", {"title": "Call"})
 
