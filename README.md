@@ -175,6 +175,13 @@ application example that uses a Muscles `Model` as the action input schema.
 You can use `build_model_json_schema` from `muscles_mcp` to generate such schemas
 directly.
 
+### 2.5. One app for MCP, ASGI and WSGI
+
+A single `App` instance can power MCP, ASGI and WSGI entrypoints.
+Use `make_protocol_app(app, protocol)` to switch protocol handling in one place.
+The same application context, registry, actions, routes, and validation logic stay
+as the single source of truth.
+
 ### 3. Let an AI client discover available tools
 
 ```python
