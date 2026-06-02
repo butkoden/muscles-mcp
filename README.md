@@ -24,10 +24,12 @@ copying application logic into the MCP layer.
 Expose a Muscles app as MCP tools and resources, backed by
 `inspect_application(app)` / `muscles inspect --json` compatible contract data.
 
-## Current Stage (Issue #4)
+## Current Stage (Issue #8)
 
-Implemented MCP projection from Muscles inspect contract:
+Implemented MCP projection as a Muscles application strategy:
 
+- `McpStrategy` can be connected through `Context(McpStrategy)`;
+- `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
   - `muscles://app/inspect`
@@ -41,6 +43,11 @@ Implemented MCP projection from Muscles inspect contract:
 - tool input validation is performed by Muscles core;
 - permission/rule denial is returned as structured MCP error mapped from core
   errors.
+- MCP protocol messages are represented by Muscles-based models in
+  `muscles_mcp.schema.mcp`;
+- MCP schema module and class names are protocol-specific and do not reuse core
+  names such as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or
+  `Response`.
 
 ### Run tests
 
@@ -111,18 +118,18 @@ contract = {
 
 ### 2. Connect MCP to the existing Muscles execution path
 
-The Muscles application is the bridge. MCP receives the app, reads its contract
-through `inspect_application(app)`, and executes tools through
-`ActionDispatcher`.
+The Muscles application is the bridge. The preferred integration is a strategy
+connected to the Muscles context. MCP reads the contract through
+`inspect_application(app)` and executes tools through `ActionDispatcher`.
 
 ```python
-from muscles_mcp import McpAdapter
+from muscles_mcp import McpAdapter, McpStrategy
 
 from muscles import ApplicationMeta, Context, register_action
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    context = Context(MyStrategy, {})
+    context = Context(McpStrategy)
 
 
 app = BookingApp()
@@ -148,13 +155,21 @@ register_action(
 )
 
 
+tools = app.context.execute(operation="list_tools")
+response = app.context.execute(
+    operation="call_tool",
+    name="bookings.create",
+    arguments={"title": "Discovery call"},
+)
+
+# Compatibility facade for existing callers.
 adapter = McpAdapter.from_application(app)
 ```
 
 ### 3. Let an AI client discover available tools
 
 ```python
-tools = adapter.list_tools()
+tools = app.context.execute(operation="list_tools")
 
 assert tools == [
     {
@@ -178,7 +193,7 @@ the codebase.
 ### 4. Expose Muscles metadata as MCP resources
 
 ```python
-resources = adapter.list_resources()
+resources = app.context.execute(operation="list_resources")
 
 assert {resource["uri"] for resource in resources} == {
     "muscles://app/inspect",
@@ -188,8 +203,8 @@ assert {resource["uri"] for resource in resources} == {
     "muscles://app/rules",
 }
 
-inspect_resource = adapter.read_resource("muscles://app/inspect")
-actions_resource = adapter.read_resource("muscles://app/actions")
+inspect_resource = app.context.execute(operation="read_resource", uri="muscles://app/inspect")
+actions_resource = app.context.execute(operation="read_resource", uri="muscles://app/actions")
 ```
 
 These resources give an agent stable context before it edits or calls the app.
@@ -199,9 +214,10 @@ contract instead of scanning random Python files.
 ### 5. Call a Muscles action through MCP
 
 ```python
-response = adapter.call_tool(
-    "bookings.create",
-    {"title": "Discovery call", "guest_count": 2},
+response = app.context.execute(
+    operation="call_tool",
+    name="bookings.create",
+    arguments={"title": "Discovery call", "guest_count": 2},
 )
 
 assert response == {
