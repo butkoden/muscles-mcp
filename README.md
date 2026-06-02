@@ -208,6 +208,30 @@ Use `make_protocol_app(app, protocol)` to switch protocol handling in one place.
 The same application context, registry, actions, routes, and validation logic stay
 as the single source of truth.
 
+For MCP over HTTP/WSGI/CLI transport (без переключения бизнес-контекста) use:
+
+```python
+from muscles_mcp import make_protocol_app
+
+mcp_http = make_protocol_app(app, "mcp-asgi", route="/mcp")
+mcp_wsgi = make_protocol_app(app, "mcp-wsgi", route="/mcp")
+mcp_cli = make_protocol_app(app, "mcp-cli")
+```
+
+`mcp_asgi/wsgi` accept the same MCP payload (JSON):
+
+```json
+{
+  "operation": "call_tool",
+  "name": "bookings.create",
+  "arguments": {"title": "Booking", "guest_count": 2},
+  "server": "public",
+  "token": "SIMSIM-PUBLIC"
+}
+```
+
+`mcp_cli` executes one request from dict/JSON and prints MCP response.
+
 ### 3. Let an AI client discover available tools
 
 ```python

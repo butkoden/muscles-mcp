@@ -20,6 +20,14 @@ class McpAdapter:
     def _contract(self) -> dict[str, Any]:
         return self._strategy._contract(self._app)
 
+    def execute(self, request: dict | None = None, operation: str | None = None, **kwargs) -> dict[str, Any]:
+        return self._strategy.execute(
+            container=self._app,
+            request=request,
+            operation=operation,
+            **kwargs,
+        )
+
     def list_tools(self) -> list[dict[str, Any]]:
         return self._strategy.list_tools(self._app)
 
@@ -29,12 +37,23 @@ class McpAdapter:
     def read_resource(self, uri: str) -> dict[str, Any]:
         return self._strategy.read_resource(self._app, uri)
 
-    def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+    def list_tools(self, server: str | None = None, token: str | None = None) -> list[dict[str, Any]]:
+        return self._strategy.list_tools(self._app, server=server, token=token)
+
+    def call_tool(
+        self,
+        name: str,
+        arguments: dict[str, Any] | None = None,
+        server: str | None = None,
+        token: str | None = None,
+    ) -> dict[str, Any]:
         return self._strategy.execute(
             operation="call_tool",
             container=self._app,
             name=name,
             arguments=arguments or {},
+            server=server,
+            token=token,
         )
 
     @staticmethod

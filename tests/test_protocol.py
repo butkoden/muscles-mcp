@@ -1,9 +1,17 @@
 import sys
 import types
+import json
 
 from muscles.core import ApplicationMeta, Context, register_action
 
-from muscles_mcp import McpAdapter, McpStrategy, make_protocol_app
+from muscles_mcp import (
+    McpAdapter,
+    McpStrategy,
+    make_mcp_asgi_app,
+    make_mcp_cli_command,
+    make_mcp_wsgi_app,
+    make_protocol_app,
+)
 
 
 class _EchoStrategy:
@@ -24,6 +32,17 @@ def _build_app():
         handler=lambda payload, context: {"pong": True},
     )
     return app
+
+
+def test_make_protocol_app_builds_mcp_http_apps():
+    app = _build_app()
+    asgi_entrypoint = make_protocol_app(app, "mcp-asgi")
+    wsgi_entrypoint = make_protocol_app(app, "mcp-wsgi", "/_mcp")
+    cli_entrypoint = make_protocol_app(app, "mcp-cli")
+
+    assert callable(asgi_entrypoint)
+    assert callable(wsgi_entrypoint)
+    assert callable(cli_entrypoint)
 
 
 def test_make_protocol_app_builds_mcp_entrypoint_and_uses_mcp_strategy():
@@ -93,3 +112,65 @@ def test_make_protocol_app_rejects_unknown_protocol():
         assert "mcp" in str(exc)
     else:
         raise AssertionError("Expected ValueError")
+
+
+def test_make_mcp_asgi_app_processes_call_tool_request():
+    app = _build_app()
+    asgi_app = make_mcp_asgi_app(app)
+
+    async def receive():
+        return {"type": "http.request", "body": b'{"operation":"call_tool","name":"ping","arguments":{}}', "more_body": False}
+
+    response_started = {}
+    chunks = []
+
+    async def send(message):
+        if message["type"] == "http.response.start":
+            response_started.update(message)
+        elif message["type"] == "http.response.body":
+            chunks.append(message["body"])
+
+    import asyncio
+
+    asyncio.run(asgi_app({"type": "http", "method": "POST", "path": "/mcp"}, receive, send))
+
+    body = b"".join(chunks)
+    payload = json.loads(body.decode("utf-8"))
+    assert response_started["status"] == 200
+    assert payload == {"content": [{"type": "json", "json": {"pong": True}}]}
+
+
+def test_make_mcp_wsgi_app_processes_list_resources_request():
+    app = _build_app()
+    wsgi_app = make_mcp_wsgi_app(app)
+
+    status = None
+    headers = None
+
+    def start_response(s, h):
+        nonlocal status, headers
+        status, headers = s, h
+
+    import io
+
+    environ = {
+        "PATH_INFO": "/mcp",
+        "REQUEST_METHOD": "POST",
+        "CONTENT_LENGTH": "53",
+        "wsgi.input": io.BytesIO(b'{"operation":"list_resources"}'),
+    }
+
+    response = b"".join(wsgi_app(environ, start_response))
+    payload = json.loads(response.decode("utf-8"))
+
+    assert status == "200 OK"
+    assert headers[0][0] == "Content-Type"
+    assert payload and payload[0]["uri"] == "muscles://app/inspect"
+
+
+def test_make_mcp_cli_command_executes_operation():
+    app = _build_app()
+    command = make_mcp_cli_command(app)
+
+    result = command({"operation": "list_tools"})
+    assert [item["name"] for item in result] == ["ping"]
