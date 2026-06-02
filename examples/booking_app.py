@@ -1,33 +1,10 @@
 from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, register_action
-from muscles_mcp import McpStrategy
+from muscles_mcp import McpStrategy, build_model_json_schema
 
 
 class BookingCreate(Model):
     title = Column(String, nullable=False, min_length=1)
     guest_count = Column(Integer, default=1)
-
-
-def model_json_schema(model_class):
-    model = model_class()
-    properties = {}
-    required = []
-    for name, column in model.columns.items():
-        field_schema = {"type": column.field_type.schema_type}
-        if column.description:
-            field_schema["description"] = column.description
-        if column.default is not None:
-            field_schema["default"] = column.default
-        if column.min_length is not None:
-            field_schema["minLength"] = column.min_length
-        if column.max_length is not None:
-            field_schema["maxLength"] = column.max_length
-        properties[name] = field_schema
-        if column.nullable is False:
-            required.append(name)
-    schema = {"type": "object", "properties": properties}
-    if required:
-        schema["required"] = required
-    return schema
 
 
 class BookingApp(metaclass=ApplicationMeta):
@@ -50,7 +27,7 @@ register_action(
     app,
     name="bookings.create",
     description="Create a booking request",
-    input_schema=model_json_schema(BookingCreate),
+    input_schema=build_model_json_schema(BookingCreate),
     output_schema={
         "type": "object",
         "properties": {

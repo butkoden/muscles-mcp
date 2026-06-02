@@ -1,6 +1,7 @@
 import inspect
 
-from muscles.core import Model
+from muscles.core import BaseUser, Model
+from muscles_mcp import build_model_json_schema
 
 from muscles_mcp.schema import mcp
 
@@ -114,4 +115,19 @@ def test_mcp_resource_read_result_uses_json_mime_type_value_object():
                 "json": [{"name": "bookings.create"}],
             }
         ]
+    }
+
+
+def test_build_model_json_schema_generates_json_schema_from_model_columns():
+    schema = build_model_json_schema(BaseUser)
+
+    assert schema == {
+        "type": "object",
+        "properties": {
+            "uuid": {"type": "uuid"},
+            "name": {"type": "string"},
+            "token": {"type": "string"},
+            "status": {"type": "number"},
+            "rules": {"type": "json"},
+        },
     }

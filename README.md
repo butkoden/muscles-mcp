@@ -172,6 +172,8 @@ adapter = McpAdapter.from_application(app)
 
 See [examples/booking_app.py](examples/booking_app.py) for a complete
 application example that uses a Muscles `Model` as the action input schema.
+You can use `build_model_json_schema` from `muscles_mcp` to generate such schemas
+directly.
 
 ### 3. Let an AI client discover available tools
 
