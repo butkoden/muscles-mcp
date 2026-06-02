@@ -5,6 +5,8 @@ from typing import Any
 
 from muscles.core import register_action
 
+from .utils import build_model_json_schema
+
 
 def _normalize_path(path: str) -> str:
     path = (path or "").strip()
@@ -31,6 +33,16 @@ def _normalize_action_name(value: str) -> str:
     cleaned = re.sub(r"[^0-9a-zA-Z_./-]", "", cleaned)
     cleaned = cleaned.replace("/", ".").replace("-", "_")
     return cleaned or "mcp_action"
+
+
+def _coerce_model_schema(schema: Any) -> Any:
+    if schema is None:
+        return None
+    if isinstance(schema, type) and hasattr(schema, "columns"):
+        return build_model_json_schema(schema)
+    if hasattr(schema, "columns"):
+        return build_model_json_schema(schema.__class__)
+    return schema
 
 
 class _BoundMcpRouter:
@@ -79,8 +91,8 @@ class McpRouter:
         route = _normalize_path(kwargs.get("route") or kwargs.get("path") or "/")
         name = kwargs.get("name") or _normalize_action_name(route)
         description = kwargs.get("description") or (func.__doc__ or "").strip()
-        input_schema = kwargs.get("input_schema")
-        output_schema = kwargs.get("output_schema")
+        input_schema = _coerce_model_schema(kwargs.get("input_schema"))
+        output_schema = _coerce_model_schema(kwargs.get("output_schema"))
         metadata = dict(kwargs.get("metadata") or {})
         metadata.setdefault("mcp", {})
         metadata["mcp"].update(

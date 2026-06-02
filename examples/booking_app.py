@@ -1,5 +1,5 @@
-from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String, register_action
-from muscles_mcp import McpStrategy
+from muscles.core import ApplicationMeta, Column, Context, Integer, Model, String
+from muscles_mcp import McpRouter, McpStrategy
 
 
 class BookingCreate(Model):
@@ -9,11 +9,13 @@ class BookingCreate(Model):
 
 class BookingApp(metaclass=ApplicationMeta):
     context = Context(McpStrategy)
+    mcp = McpRouter(route_prefix="/api")
 
 
 app = BookingApp()
 
 
+@app.mcp(route="/bookings/create", input_schema=BookingCreate)
 def create_booking(payload, context):
     return {
         "id": 1,
@@ -21,25 +23,6 @@ def create_booking(payload, context):
         "guest_count": payload.get("guest_count", 1),
         "transport": context.transport,
     }
-
-
-register_action(
-    app,
-    name="bookings.create",
-    description="Create a booking request",
-    input_schema=BookingCreate,
-    output_schema={
-        "type": "object",
-        "properties": {
-            "id": {"type": "integer"},
-            "title": {"type": "string"},
-            "guest_count": {"type": "integer"},
-            "transport": {"type": "string"},
-        },
-    },
-    transports=["mcp"],
-    handler=create_booking,
-)
 
 
 if __name__ == "__main__":

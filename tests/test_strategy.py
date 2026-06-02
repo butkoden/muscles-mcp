@@ -218,6 +218,53 @@ def test_mcp_router_registers_action_with_route_metadata():
     }
 
 
+def test_mcp_router_accepts_model_schema_and_runs_validation_without_core_to_json_side_effects():
+    class BookingCreate(Model):
+        title = Column(String, nullable=False, min_length=1)
+        guest_count = Column(Integer, default=1)
+
+    class _RoutesModelApp(metaclass=ApplicationMeta):
+        context = Context(McpStrategy)
+        mcp = McpRouter(route_prefix="/api")
+
+    app = _RoutesModelApp()
+
+    @app.mcp(route="/bookings/model", name="bookings.model", input_schema=BookingCreate)
+    def create_booking_model(payload, context):
+        return payload
+
+    tools = app.context.execute(operation="list_tools")
+    assert tools == [
+        {
+            "name": "bookings.model",
+            "description": "",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "minLength": 1},
+                    "guest_count": {"type": "integer", "default": 1},
+                },
+                "required": ["title"],
+            },
+        }
+    ]
+
+    response = app.context.execute(
+        operation="call_tool",
+        name="bookings.model",
+        arguments={"title": "M"},
+    )
+    assert response == {
+        "content": [
+            {
+                "type": "json",
+                "json": {"title": "M"},
+            }
+        ]
+    }
+
+
+
 def test_mcp_strategy_state_is_scoped_to_container_application():
     app_a, _ = _build_mcp_app()
 
