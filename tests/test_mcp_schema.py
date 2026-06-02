@@ -19,6 +19,7 @@ def test_mcp_protocol_models_live_under_schema_mcp_without_core_name_collisions(
         "McpResourceDescriptor",
         "McpResourceContent",
         "McpToolJsonContent",
+        "McpStreamEventContent",
         "McpErrorPayload",
         "McpToolCallRequest",
         "McpToolCallResult",

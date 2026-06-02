@@ -60,6 +60,10 @@ User docs:
 - English: [docs/mcp-projection.en.md](docs/mcp-projection.en.md)
 - Русский: [docs/mcp-projection.ru.md](docs/mcp-projection.ru.md)
 
+Runnable example:
+
+- [examples/booking_app.py](examples/booking_app.py)
+
 ## Detailed Usage Example
 
 This example shows the intended architecture:
@@ -165,6 +169,9 @@ response = app.context.execute(
 # Compatibility facade for existing callers.
 adapter = McpAdapter.from_application(app)
 ```
+
+See [examples/booking_app.py](examples/booking_app.py) for a complete
+application example that uses a Muscles `Model` as the action input schema.
 
 ### 3. Let an AI client discover available tools
 

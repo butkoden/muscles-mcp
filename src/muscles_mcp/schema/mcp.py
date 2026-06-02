@@ -41,6 +41,7 @@ class McpToolDescriptor(_MusclesModel):
     name = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), nullable=False)
     description = _Column(_Text, default="")
     input_schema = _Column(_Json, default=dict)
+    stream = _Column(_Json, default=None)
 
     @classmethod
     def from_action_contract(cls, action: dict[str, Any]):
@@ -48,14 +49,19 @@ class McpToolDescriptor(_MusclesModel):
             name=action["name"],
             description=action.get("description", ""),
             input_schema=action.get("input_schema", {"type": "object", "properties": {}}),
+            stream=action.get("stream") if action.get("stream_output") else None,
         )
 
     def to_payload(self) -> dict[str, Any]:
-        return {
+        payload = {
             "name": str(self.name),
             "description": self.description or "",
             "input_schema": _json_value(self.input_schema, {"type": "object", "properties": {}}),
         }
+        stream = _json_value(self.stream)
+        if stream is not None:
+            payload["stream"] = stream
+        return payload
 
 
 class McpResourceDescriptor(_MusclesModel):
@@ -101,6 +107,32 @@ class McpToolJsonContent(_MusclesModel):
         }
 
 
+class McpStreamEventContent(_MusclesModel):
+    event = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), nullable=False)
+    data = _Column(_Json, default=dict)
+    event_id = _Column(_Text, default=None)
+    metadata = _Column(_Json, default=dict)
+
+    @classmethod
+    def from_core_event(cls, event):
+        return cls(
+            event=event.type,
+            data=event.data,
+            event_id=event.event_id,
+            metadata=dict(event.metadata),
+        )
+
+    def to_payload(self) -> dict[str, Any]:
+        return McpToolJsonContent.from_json(
+            {
+                "event": str(self.event),
+                "data": _json_value(self.data, {}),
+                "id": self.event_id,
+                "metadata": _json_value(self.metadata, {}),
+            }
+        ).to_payload()
+
+
 class McpErrorPayload(_MusclesModel):
     code = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), nullable=False)
     message = _Column(_Text, default="")
@@ -139,13 +171,30 @@ class McpToolCallResult(_MusclesModel):
         return cls(content=[McpToolJsonContent.from_json(value).to_payload()], is_error=False, error=None)
 
     @classmethod
+    def stream(cls, stream_result: Any):
+        from muscles.core import stream_events
+
+        content = []
+        is_error = False
+        for event in stream_events(stream_result):
+            if event.type == "error":
+                is_error = True
+            content.append(McpStreamEventContent.from_core_event(event).to_payload())
+        return cls(content=content, is_error=is_error, error=None)
+
+    @classmethod
     def failure(cls, code: str, message: str, data: Any = None):
         error = McpErrorPayload(code=code, message=message, data=data).to_payload()
         return cls(content=[], is_error=True, error=error)
 
     def to_payload(self) -> dict[str, Any]:
         if self.is_error:
-            return {"isError": True, "error": _json_value(self.error)}
+            payload: dict[str, Any] = {"isError": True}
+            if self.content:
+                payload["content"] = self.content
+            if self.error is not None:
+                payload["error"] = _json_value(self.error)
+            return payload
         return {"content": self.content or []}
 
 
@@ -166,6 +215,7 @@ __all__ = (
     "McpResourceDescriptor",
     "McpResourceContent",
     "McpToolJsonContent",
+    "McpStreamEventContent",
     "McpErrorPayload",
     "McpToolCallRequest",
     "McpToolCallResult",

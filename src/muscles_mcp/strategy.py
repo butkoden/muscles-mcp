@@ -85,6 +85,8 @@ class McpStrategy(BaseStrategy):
 
             payload = request.to_payload()
             result = ActionDispatcher(app).execute(payload["name"], payload["arguments"], transport="mcp")
+            if result.is_stream:
+                return McpToolCallResult.stream(result.value).to_payload()
             return McpToolCallResult.success(result.value).to_payload()
         except Exception as exc:
             mapped = self.map_core_error(exc)

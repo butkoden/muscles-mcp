@@ -20,6 +20,10 @@ class App(metaclass=ApplicationMeta):
 `McpAdapter.from_application(app)` сохранен как совместимый facade для старого
 кода, но внутри использует ту же strategy/projection логику.
 
+Полный пример пользовательского приложения есть в
+`examples/booking_app.py`. В нем action использует Muscles `Model` как
+`input_schema`, а MCP вызывает этот action через `Context(McpStrategy)`.
+
 ## Discovery
 
 MCP tools и resources строятся из Muscles inspect contract:
@@ -49,6 +53,14 @@ response = app.context.execute(
 Внутри strategy вызывает `ActionDispatcher(app).execute(...)` с
 `transport="mcp"`. Валидация, rules/security и handler execution происходят в
 core.
+
+## Streaming
+
+Stream-capable actions обнаруживаются через `inspect_application(app)`.
+Если core `ActionDispatcher` возвращает `StreamResult`, strategy проецирует
+каждый `StreamEvent` в MCP JSON content с полями `event`, `data`, `id` и
+`metadata`. Если stream выдает error event, MCP response получает
+`isError=true`.
 
 ## MCP-схемы
 
