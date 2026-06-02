@@ -54,6 +54,27 @@ Internally the strategy calls `ActionDispatcher(app).execute(...)` with
 `transport="mcp"`. Validation, rules/security, and handler execution happen in
 core.
 
+## Contract Payload Example
+
+You can pass a MCP request contract object directly:
+
+```python
+response = app.context.execute(
+    request={
+        "operation": "call_tool",
+        "name": "bookings.create",
+        "arguments": {"title": "Hello MCP", "guest_count": 2},
+    }
+)
+```
+
+The same shape is used for discovery:
+
+```python
+tools = app.context.execute(request={"operation": "list_tools"})
+actions = app.context.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
+```
+
 ## Streaming
 
 Stream-capable actions are discovered through `inspect_application(app)`.

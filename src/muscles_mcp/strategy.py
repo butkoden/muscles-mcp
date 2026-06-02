@@ -5,6 +5,7 @@ from typing import Any
 from muscles.core import BaseStrategy
 
 from .schema.mcp import (
+    McpProtocolRequest,
     McpResourceDescriptor,
     McpResourceReadResult,
     McpToolCallRequest,
@@ -25,27 +26,62 @@ RESOURCE_MAP = {
 class McpStrategy(BaseStrategy):
     """MCP protocol strategy bound to a Muscles application Context."""
 
-    def execute(self, *args, operation: str | None = None, container=None, **kwargs):
+    def execute(self, *args, operation: str | None = None, request: dict | None = None, container=None, **kwargs):
         app = self._resolve_application(kwargs.pop("app", None) or container)
         if app is None:
             raise McpError(code="application_required", message="MCP strategy requires a Muscles application")
 
+        request_payload = self._resolve_request_payload(request)
+        operation = self._resolve_operation(operation, request_payload, args)
+        if request_payload is not None:
+            operation = str(request_payload.operation)
+            kwargs = {
+                **kwargs,
+                **{k: v for k, v in {
+                    "uri": request_payload.uri,
+                    "name": request_payload.name,
+                    "arguments": request_payload.arguments,
+                }.items() if v is not None},
+            }
         operation = operation or (args[0] if args else None)
         if operation == "list_tools":
             return self.list_tools(app)
         if operation == "list_resources":
             return self.list_resources()
         if operation == "read_resource":
-            return self.read_resource(app, kwargs["uri"])
+            if kwargs.get("uri") is None:
+                raise McpError(code="invalid_request", message="Missing resource uri")
+            return self.read_resource(app, str(kwargs["uri"]))
         if operation == "call_tool":
-            request = McpToolCallRequest.from_payload(
+            if kwargs.get("name") is None:
+                raise McpError(code="invalid_request", message="Missing tool name")
+            call_request = McpToolCallRequest.from_payload(
                 {
-                    "name": kwargs.get("name"),
+                    "name": str(kwargs.get("name")),
                     "arguments": kwargs.get("arguments") or {},
                 }
             )
-            return self.call_tool(app, request)
+            return self.call_tool(app, call_request)
         raise McpError(code="unknown_operation", message=f"Unknown MCP operation: {operation}")
+
+    @staticmethod
+    def _resolve_operation(operation: str | None, request_payload: McpProtocolRequest | None, args: tuple[Any, ...]):
+        if operation is not None:
+            return operation
+        if request_payload is not None:
+            return str(request_payload.operation)
+        if args:
+            return args[0]
+        return None
+
+    @staticmethod
+    def _resolve_request_payload(request: dict | None) -> McpProtocolRequest | None:
+        if request is None:
+            return None
+        try:
+            return McpProtocolRequest.from_payload(request)
+        except Exception as exc:
+            raise McpError(code="invalid_request", message="Invalid MCP request payload", data={"error": str(exc)})
 
     def list_tools(self, app) -> list[dict[str, Any]]:
         tools: list[dict[str, Any]] = []

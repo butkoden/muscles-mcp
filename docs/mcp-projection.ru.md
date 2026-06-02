@@ -54,6 +54,27 @@ response = app.context.execute(
 `transport="mcp"`. Валидация, rules/security и handler execution происходят в
 core.
 
+## Пример через контрактный payload
+
+Можно передавать MCP-запрос как единый payload:
+
+```python
+response = app.context.execute(
+    request={
+        "operation": "call_tool",
+        "name": "bookings.create",
+        "arguments": {"title": "Hello MCP", "guest_count": 2},
+    }
+)
+```
+
+То же самое для discovery:
+
+```python
+tools = app.context.execute(request={"operation": "list_tools"})
+actions = app.context.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
+```
+
 ## Streaming
 
 Stream-capable actions обнаруживаются через `inspect_application(app)`.

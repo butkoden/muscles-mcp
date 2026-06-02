@@ -1,6 +1,8 @@
 from muscles.core import ApplicationMeta, BaseStrategy, Context, StreamEvent, StreamResult, register_action
 
-from muscles_mcp import McpAdapter, McpStrategy
+import pytest
+
+from muscles_mcp import McpAdapter, McpError, McpStrategy
 
 
 class _EchoStrategy(BaseStrategy):
@@ -195,3 +197,67 @@ def test_mcp_adapter_projects_stream_error_event_as_mcp_friendly_error_response(
     assert response["content"][0]["json"]["event"] == "progress"
     assert response["content"][1]["json"]["event"] == "error"
     assert response["content"][1]["json"]["data"]["code"] == "stream_error"
+
+
+def test_mcp_strategy_accepts_operation_and_tool_payload_from_request_contract():
+    app, _ = _build_mcp_app()
+
+    response = app.context.execute(
+        request={
+            "operation": "call_tool",
+            "name": "bookings.create",
+            "arguments": {"title": "From contract", "guest_count": 2},
+        }
+    )
+
+    assert response == {
+        "content": [
+            {
+                "type": "json",
+                "json": {"id": 1, "title": "From contract", "guest_count": 2},
+            }
+        ]
+    }
+
+
+def test_mcp_strategy_rejects_unknown_operation_in_request_contract():
+    app, _ = _build_mcp_app()
+
+    with pytest.raises(McpError) as exc:
+        app.context.execute(
+            request={
+                "operation": "bad_operation",
+                "name": "bookings.create",
+            }
+        )
+    assert exc.value.code == "invalid_request"
+
+
+def test_mcp_strategy_accepts_list_resources_from_request_contract():
+    app, _ = _build_mcp_app()
+
+    resources = app.context.execute(request={"operation": "list_resources"})
+    uris = {item["uri"] for item in resources}
+
+    assert uris == {
+        "muscles://app/inspect",
+        "muscles://app/actions",
+        "muscles://app/routes",
+        "muscles://app/schemas",
+        "muscles://app/rules",
+    }
+
+
+def test_mcp_strategy_accepts_read_resource_from_request_contract():
+    app, _ = _build_mcp_app()
+
+    payload = app.context.execute(
+        request={
+            "operation": "read_resource",
+            "uri": "muscles://app/actions",
+        }
+    )
+    assert payload["contents"][0]["uri"] == "muscles://app/actions"
+    assert payload["contents"][0]["mimeType"] == "application/json"
+    assert isinstance(payload["contents"][0]["json"], list)
+    assert payload["contents"][0]["json"][0]["name"] == "bookings.create"

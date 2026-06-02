@@ -27,6 +27,17 @@ def _json_value(value: Any, fallback: Any = None) -> Any:
     return value
 
 
+def _json_payload(value: Any, fallback: Any = None) -> Any:
+    if value is None:
+        return fallback
+    if isinstance(value, str):
+        try:
+            return _json.loads(value)
+        except Exception:
+            return value
+    return value
+
+
 class McpJsonMimeType(_ValueObject):
     def normalize(self, value):
         return str(value).strip().lower()
@@ -35,6 +46,79 @@ class McpJsonMimeType(_ValueObject):
         if value != "application/json":
             raise ValueError("MCP JSON resources must use application/json mime type")
         return True
+
+
+class McpOperation(_ValueObject):
+    """Operation names supported by the MCP strategy."""
+
+    allowed = {
+        "list_tools",
+        "list_resources",
+        "read_resource",
+        "call_tool",
+    }
+
+    def normalize(self, value):
+        return str(value).strip().lower()
+
+    def validate(self, value):
+        if value not in self.allowed:
+            raise ValueError(f"Unknown MCP operation: {value}")
+        return True
+
+
+class McpJsonPayload(_ValueObject):
+    """Normalized JSON payload holder for MCP arguments and request bodies."""
+
+    def normalize(self, value):
+        if isinstance(value, McpJsonPayload):
+            return value.value
+        if value is None:
+            return {}
+        if isinstance(value, str):
+            try:
+                value = _json.loads(value)
+            except Exception:
+                raise ValueError(f"Invalid JSON payload: {value!r}")
+        if not isinstance(value, dict):
+            raise ValueError(f"Invalid MCP payload value: {type(value)!r}")
+        return value
+
+    def validate(self, value):
+        if not isinstance(value, dict):
+            raise ValueError(f"Invalid MCP payload value: {value!r}")
+        return True
+
+    def __eq__(self, other):
+        if isinstance(other, dict):
+            return self.value == other
+        return super().__eq__(other)
+
+
+def _payload_value(value: Any, fallback: Any = None) -> Any:
+    if value is None:
+        return fallback
+    if isinstance(value, _ValueObject):
+        return value.to_primitive()
+    return _json_value(value, fallback)
+
+
+class McpProtocolRequest(_MusclesModel):
+    operation = _Column(_ValueObjectField(value_object_class=McpOperation), nullable=False)
+    uri = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), default=None)
+    name = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), default=None)
+    arguments = _Column(_ValueObjectField(value_object_class=McpJsonPayload), default=dict)
+
+    @classmethod
+    def from_payload(cls, payload: dict[str, Any]):
+        if payload is None:
+            raise ValueError("Payload is required")
+        return cls(
+            operation=payload.get("operation"),
+            uri=payload.get("uri"),
+            name=payload.get("name"),
+            arguments=_json_payload(payload.get("arguments"), {}),
+        )
 
 
 class McpToolDescriptor(_MusclesModel):
@@ -148,7 +232,7 @@ class McpErrorPayload(_MusclesModel):
 
 class McpToolCallRequest(_MusclesModel):
     name = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), nullable=False)
-    arguments = _Column(_Json, default=dict)
+    arguments = _Column(_ValueObjectField(value_object_class=McpJsonPayload), default=dict)
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]):
@@ -157,7 +241,7 @@ class McpToolCallRequest(_MusclesModel):
     def to_payload(self) -> dict[str, Any]:
         return {
             "name": str(self.name),
-            "arguments": _json_value(self.arguments, {}),
+            "arguments": _payload_value(self.arguments, {}),
         }
 
 
@@ -211,6 +295,8 @@ class McpResourceReadResult(_MusclesModel):
 
 __all__ = (
     "McpJsonMimeType",
+    "McpOperation",
+    "McpProtocolRequest",
     "McpToolDescriptor",
     "McpResourceDescriptor",
     "McpResourceContent",

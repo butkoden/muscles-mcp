@@ -15,6 +15,8 @@ def test_mcp_protocol_models_live_under_schema_mcp_without_core_name_collisions(
 
     assert exported_model_names == {
         "McpJsonMimeType",
+        "McpOperation",
+        "McpProtocolRequest",
         "McpToolDescriptor",
         "McpResourceDescriptor",
         "McpResourceContent",
@@ -30,8 +32,11 @@ def test_mcp_protocol_models_live_under_schema_mcp_without_core_name_collisions(
 def test_mcp_protocol_models_inherit_muscles_model_contract():
     for name in mcp.__all__:
         obj = getattr(mcp, name)
-        if inspect.isclass(obj) and name != "McpJsonMimeType":
-            assert issubclass(obj, Model)
+        if not inspect.isclass(obj):
+            continue
+        if name in {"McpJsonMimeType", "McpOperation", "McpProtocolRequest"}:
+            continue
+        assert issubclass(obj, Model)
 
 
 def test_mcp_tool_call_request_parses_incoming_message_with_value_object():
@@ -48,6 +53,21 @@ def test_mcp_tool_call_request_parses_incoming_message_with_value_object():
         "name": "bookings.create",
         "arguments": {"title": "Call"},
     }
+
+
+def test_mcp_protocol_request_resolves_known_operation():
+    payload = mcp.McpProtocolRequest.from_payload(
+        {
+            "operation": "list_tools",
+            "uri": "muscles://app/inspect",
+            "name": "bookings.create",
+            "arguments": {"title": "Call"},
+        }
+    )
+    assert str(payload.operation) == "list_tools"
+    assert str(payload.uri) == "muscles://app/inspect"
+    assert str(payload.name) == "bookings.create"
+    assert payload.arguments == {"title": "Call"}
 
 
 def test_mcp_tool_call_result_forms_outgoing_success_payload():
