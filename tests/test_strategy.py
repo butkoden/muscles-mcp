@@ -13,7 +13,7 @@ from muscles.core import (
 
 import pytest
 
-from muscles_mcp import McpAdapter, McpError, McpStrategy
+from muscles_mcp import McpAdapter, McpError, McpRouter, McpStrategy
 
 
 class _EchoStrategy(BaseStrategy):
@@ -138,6 +138,84 @@ def test_mcp_adapter_is_facade_over_strategy_projection():
 
     assert calls == [("bookings.create", {"title": "Facade"}, "mcp")]
     assert response["content"][0]["json"]["title"] == "Facade"
+
+
+def test_mcp_router_registers_action_with_route_metadata():
+    class _RoutesApp(metaclass=ApplicationMeta):
+        context = Context(McpStrategy)
+        mcp = McpRouter(route_prefix="/api")
+
+    app = _RoutesApp()
+
+    @app.mcp(route="/bookings/create", description="Create booking", input_schema=BOOKING_INPUT_SCHEMA)
+    def create_booking(payload, context):
+        return {
+            "title": payload["title"],
+            "guest_count": payload.get("guest_count", 1),
+        }
+
+    tools = app.context.execute(operation="list_tools")
+    assert tools == [
+        {
+            "name": "bookings.create",
+            "description": "Create booking",
+            "input_schema": BOOKING_INPUT_SCHEMA,
+        }
+    ]
+
+    actions_resource = app.context.execute(operation="read_resource", uri="muscles://app/actions")
+    assert actions_resource == {
+        "contents": [
+            {
+                "uri": "muscles://app/actions",
+                "mimeType": "application/json",
+                "json": [
+                    {
+                        "name": "bookings.create",
+                        "description": "Create booking",
+                        "input_schema": BOOKING_INPUT_SCHEMA,
+                        "output_schema": {"type": "object", "properties": {}},
+                        "rules": [],
+                        "handler_ref": "test_strategy.create_booking",
+                        "transports": ["mcp"],
+                        "stream_output": False,
+                        "stream": {
+                            "enabled": False,
+                            "event_types": ["error", "log", "progress", "result"],
+                            "cooperative_cancellation": True,
+                            "backpressure": "transport-bounded",
+                            "metadata": {},
+                        },
+                        "metadata": {
+                            "mcp": {
+                                "route": "/bookings/create",
+                                "full_route": "/api/bookings/create",
+                                "name": "bookings.create",
+                                "transport": "mcp",
+                            }
+                        },
+                    }
+                ],
+            }
+        ]
+    }
+
+    response = app.context.execute(
+        operation="call_tool",
+        name="bookings.create",
+        arguments={"title": "Route based"},
+    )
+    assert response == {
+        "content": [
+            {
+                "type": "json",
+                "json": {
+                    "title": "Route based",
+                    "guest_count": 1,
+                },
+            }
+        ]
+    }
 
 
 def test_mcp_strategy_state_is_scoped_to_container_application():

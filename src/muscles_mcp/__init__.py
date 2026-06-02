@@ -1,6 +1,7 @@
 from .adapter import McpAdapter, McpError
 from .strategy import McpStrategy
 from .utils import build_model_json_schema
+from .router import McpRouter
 from .protocols import ProtocolUnavailableError, make_protocol_app
 
 __all__ = [
@@ -8,6 +9,7 @@ __all__ = [
     "McpError",
     "McpStrategy",
     "build_model_json_schema",
+    "McpRouter",
     "ProtocolUnavailableError",
     "make_protocol_app",
 ]

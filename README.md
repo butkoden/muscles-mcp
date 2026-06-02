@@ -127,13 +127,14 @@ connected to the Muscles context. MCP reads the contract through
 `inspect_application(app)` and executes tools through `ActionDispatcher`.
 
 ```python
-from muscles_mcp import McpAdapter, McpStrategy
+from muscles_mcp import McpAdapter, McpRouter, McpStrategy
 
 from muscles import ApplicationMeta, Context, register_action
 
 
 class BookingApp(metaclass=ApplicationMeta):
     context = Context(McpStrategy)
+    mcp = McpRouter(route_prefix="/api")
 
 
 app = BookingApp()
@@ -157,6 +158,17 @@ register_action(
         "status": "created",
     },
 )
+
+
+# Alternative style for route-first registration (controller-like ergonomics)
+@app.mcp(route="/bookings/create", name="bookings.create_route", description="Create a booking request")
+def create_booking_route(payload, context):
+    return {
+        "id": 1,
+        "title": payload["title"],
+        "guest_count": payload.get("guest_count", 1),
+        "status": "created",
+    }
 
 
 tools = app.context.execute(operation="list_tools")
