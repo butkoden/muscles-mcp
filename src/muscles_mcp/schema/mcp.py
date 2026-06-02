@@ -10,9 +10,9 @@ from muscles.core import (
     List as _List,
     Model as _MusclesModel,
     NonEmptyStringValue as _NonEmptyStringValue,
-    Text as _Text,
     ValueObject as _ValueObject,
     ValueObjectField as _ValueObjectField,
+    Text as _Text,
 )
 
 
@@ -108,6 +108,8 @@ class McpProtocolRequest(_MusclesModel):
     uri = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), default=None)
     name = _Column(_ValueObjectField(value_object_class=_NonEmptyStringValue), default=None)
     arguments = _Column(_ValueObjectField(value_object_class=McpJsonPayload), default=dict)
+    server = _Column(_Text, default=None)
+    token = _Column(_Text, default=None)
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]):
@@ -118,6 +120,8 @@ class McpProtocolRequest(_MusclesModel):
             uri=payload.get("uri"),
             name=payload.get("name"),
             arguments=_json_payload(payload.get("arguments"), {}),
+            server=payload.get("server"),
+            token=payload.get("token"),
         )
 
 

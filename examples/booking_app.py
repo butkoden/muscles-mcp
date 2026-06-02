@@ -15,7 +15,12 @@ class BookingApp(metaclass=ApplicationMeta):
 app = BookingApp()
 
 
-@app.mcp(route="/bookings/create", input_schema=BookingCreate)
+@app.mcp.server(name="public", route_prefix="/bookings", token="SIMSIM-PUBLIC")
+def public_server():
+    pass
+
+
+@public_server.action(route="/create", name="bookings.create", input_schema=BookingCreate)
 def create_booking(payload, context):
     return {
         "id": 1,

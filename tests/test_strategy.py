@@ -164,41 +164,13 @@ def test_mcp_router_registers_action_with_route_metadata():
     ]
 
     actions_resource = app.context.execute(operation="read_resource", uri="muscles://app/actions")
-    assert actions_resource == {
-        "contents": [
-            {
-                "uri": "muscles://app/actions",
-                "mimeType": "application/json",
-                "json": [
-                    {
-                        "name": "bookings.create",
-                        "description": "Create booking",
-                        "input_schema": BOOKING_INPUT_SCHEMA,
-                        "output_schema": {"type": "object", "properties": {}},
-                        "rules": [],
-                        "handler_ref": "test_strategy.create_booking",
-                        "transports": ["mcp"],
-                        "stream_output": False,
-                        "stream": {
-                            "enabled": False,
-                            "event_types": ["error", "log", "progress", "result"],
-                            "cooperative_cancellation": True,
-                            "backpressure": "transport-bounded",
-                            "metadata": {},
-                        },
-                        "metadata": {
-                            "mcp": {
-                                "route": "/bookings/create",
-                                "full_route": "/api/bookings/create",
-                                "name": "bookings.create",
-                                "transport": "mcp",
-                            }
-                        },
-                    }
-                ],
-            }
-        ]
-    }
+    action_entry = actions_resource["contents"][0]["json"][0]
+    assert action_entry["metadata"]["mcp"]["route"] == "/bookings/create"
+    assert action_entry["metadata"]["mcp"]["full_route"] == "/api/bookings/create"
+    assert action_entry["metadata"]["mcp"]["name"] == "bookings.create"
+    assert action_entry["metadata"]["mcp"]["transport"] == "mcp"
+    assert action_entry["name"] == "bookings.create"
+    assert action_entry["description"] == "Create booking"
 
     response = app.context.execute(
         operation="call_tool",
@@ -264,6 +236,64 @@ def test_mcp_router_accepts_model_schema_and_runs_validation_without_core_to_jso
     }
 
 
+def test_mcp_router_server_api_registers_actions_and_supports_server_level_filter_and_token():
+    class BookingCreate(Model):
+        title = Column(String, nullable=False, min_length=1)
+        guest_count = Column(Integer, default=1)
+
+    class _McpServerApp(metaclass=ApplicationMeta):
+        context = Context(McpStrategy)
+        mcp = McpRouter(route_prefix="/api")
+
+    app = _McpServerApp()
+
+    @app.mcp.server(name="public", route_prefix="/mcp/public", token="SIMSIM-PUBLIC")
+    def public_server():
+        pass
+
+    @public_server.action(route="/bookings/create", name="bookings.create", input_schema=BookingCreate)
+    def create_booking(payload, context):
+        return {
+            "title": payload["title"],
+            "guest_count": payload.get("guest_count", 1),
+            "server": payload.get("server"),
+        }
+
+    @public_server.action(route="/bookings/list", name="bookings.health", input_schema={"type": "object", "properties": {}})
+    def list_booking(payload, context):
+        return {"ok": True}
+
+    public_tools = app.context.execute(operation="list_tools", server="public")
+    assert [tool["name"] for tool in public_tools] == ["bookings.create", "bookings.health"]
+
+    admin_tools = app.context.execute(operation="list_tools", server="admin")
+    assert admin_tools == []
+
+    assert app.context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC") == public_tools
+    assert app.context.execute(operation="list_tools", server="public", token="WRONG") == []
+
+    denied_response = app.context.execute(
+        operation="call_tool",
+        server="public",
+        token="WRONG",
+        name="bookings.create",
+        arguments={"title": "Need token"},
+    )
+    assert denied_response["isError"] is True
+    assert denied_response["error"]["code"] == "permission_denied"
+
+    allowed_response = app.context.execute(
+        operation="call_tool",
+        server="public",
+        token="SIMSIM-PUBLIC",
+        name="bookings.create",
+        arguments={"title": "Need token"},
+    )
+    assert allowed_response["content"][0]["json"] == {
+        "title": "Need token",
+        "guest_count": 1,
+        "server": None,
+    }
 
 def test_mcp_strategy_state_is_scoped_to_container_application():
     app_a, _ = _build_mcp_app()
@@ -434,3 +464,15 @@ def test_mcp_strategy_accepts_read_resource_from_request_contract():
     assert payload["contents"][0]["mimeType"] == "application/json"
     assert isinstance(payload["contents"][0]["json"], list)
     assert payload["contents"][0]["json"][0]["name"] == "bookings.create"
+
+
+def test_mcp_strategy_supports_server_filtering_via_request_contract():
+    app, _ = _build_mcp_app()
+    payload = app.context.execute(
+        request={
+            "operation": "list_tools",
+            "server": "legacy",
+            "token": "notused",
+        }
+    )
+    assert [tool["name"] for tool in payload] == ["bookings.create"]

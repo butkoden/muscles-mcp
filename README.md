@@ -161,8 +161,11 @@ register_action(
 
 
 # Alternative style for route-first registration (controller-like ergonomics)
-@app.mcp(route="/bookings/create", name="bookings.create_route", description="Create a booking request")
-def create_booking_route(payload, context):
+public = app.mcp.server(name="public", route_prefix="/bookings", token="SIMSIM-PUBLIC")
+
+
+@public.action(route="/create", name="bookings.create", description="Create a booking request")
+def create_booking(payload, context):
     return {
         "id": 1,
         "title": payload["title"],
@@ -171,9 +174,20 @@ def create_booking_route(payload, context):
     }
 
 
-tools = app.context.execute(operation="list_tools")
+admin = app.mcp.server(name="admin", route_prefix="/admin")
+
+
+@admin.action(route="/health", name="admin.health")
+def admin_health(payload, context):
+    return {"ok": True}
+
+
+tools = app.context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")
+admin_tools = app.context.execute(operation="list_tools", server="admin")
 response = app.context.execute(
     operation="call_tool",
+    server="public",
+    token="SIMSIM-PUBLIC",
     name="bookings.create",
     arguments={"title": "Discovery call"},
 )

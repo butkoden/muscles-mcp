@@ -42,11 +42,13 @@ class McpStrategy(BaseStrategy):
                     "uri": request_payload.uri,
                     "name": request_payload.name,
                     "arguments": request_payload.arguments,
+                    "server": getattr(request_payload, "server", None),
+                    "token": getattr(request_payload, "token", None),
                 }.items() if v is not None},
             }
         operation = operation or (args[0] if args else None)
         if operation == "list_tools":
-            return self.list_tools(app)
+            return self.list_tools(app, server=kwargs.get("server"), token=kwargs.get("token"))
         if operation == "list_resources":
             return self.list_resources()
         if operation == "read_resource":
@@ -62,7 +64,12 @@ class McpStrategy(BaseStrategy):
                     "arguments": kwargs.get("arguments") or {},
                 }
             )
-            return self.call_tool(app, call_request)
+            return self.call_tool(
+                app,
+                call_request,
+                server=kwargs.get("server"),
+                token=kwargs.get("token"),
+            )
         raise McpError(code="unknown_operation", message=f"Unknown MCP operation: {operation}")
 
     @staticmethod
@@ -84,7 +91,7 @@ class McpStrategy(BaseStrategy):
         except Exception as exc:
             raise McpError(code="invalid_request", message="Invalid MCP request payload", data={"error": str(exc)})
 
-    def list_tools(self, app) -> list[dict[str, Any]]:
+    def list_tools(self, app, server: str | None = None, token: str | None = None) -> list[dict[str, Any]]:
         contract = self._contract_with_mcp_schemas(app)
         tools: list[dict[str, Any]] = []
         for action in contract.get("actions", []):
@@ -93,6 +100,8 @@ class McpStrategy(BaseStrategy):
                 continue
             transports = action.get("transports") or []
             if transports and "mcp" not in transports:
+                continue
+            if not self._action_allowed_for_server(action, server=server, token=token, enforce_token=False):
                 continue
             tool = McpToolDescriptor.from_action_contract({**action, "name": name})
             tools.append(tool.to_payload())
@@ -117,12 +126,18 @@ class McpStrategy(BaseStrategy):
             raise McpError(code="not_found", message=f"Unknown resource: {uri}")
         return McpResourceReadResult.from_json(uri, mapping[uri]).to_payload()
 
-    def call_tool(self, app, request: McpToolCallRequest) -> dict[str, Any]:
+    def call_tool(self, app, request: McpToolCallRequest, server: str | None = None, token: str | None = None) -> dict[str, Any]:
         try:
             from muscles.core import ActionDispatcher
+            from muscles.core import ActionPermissionDenied
+            from muscles.core import ActionNotFound
 
             payload = request.to_payload()
-            result = ActionDispatcher(app).execute(payload["name"], payload["arguments"], transport="mcp")
+            action_name = payload["name"]
+            action = self._lookup_action_contract(app, action_name)
+            if action is not None and not self._action_allowed_for_server(action, server=server, token=token, enforce_token=True):
+                raise ActionPermissionDenied(action_name, "Action is not available for the requested MCP server")
+            result = ActionDispatcher(app).execute(action_name, payload["arguments"], transport="mcp")
             if result.is_stream:
                 return McpToolCallResult.stream(result.value).to_payload()
             return McpToolCallResult.success(result.value).to_payload()
@@ -135,6 +150,85 @@ class McpStrategy(BaseStrategy):
                 message="Internal error",
                 data=None,
             ).to_payload()
+
+    @staticmethod
+    def _normalize_server_candidates(server: str | None, metadata: dict[str, Any] | None) -> list[str]:
+        if not server:
+            return []
+        if not metadata:
+            return []
+        candidates = McpStrategy._normalize_server_list(metadata.get("servers"))
+        single = McpStrategy._normalize_server_name(metadata.get("server"))
+        if single:
+            candidates.append(single)
+        return list(dict.fromkeys(candidates))
+
+    @staticmethod
+    def _normalize_server_name(value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = str(value).strip().strip("/")
+        return value or None
+
+    @staticmethod
+    def _normalize_server_list(value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            values = [value]
+        elif isinstance(value, (list, tuple, set)):
+            values = list(value)
+        else:
+            return []
+        return [McpStrategy._normalize_server_name(item) for item in values if McpStrategy._normalize_server_name(item)]
+
+    def _action_allowed_for_server(
+        self,
+        action: dict[str, Any],
+        server: str | None,
+        token: str | None,
+        *,
+        enforce_token: bool = True,
+    ) -> bool:
+        if server is None and token is None:
+            return True
+
+        metadata = action.get("metadata", {})
+        mcp_metadata = metadata.get("mcp", {}) if isinstance(metadata, dict) else {}
+        required_token = mcp_metadata.get("token") if isinstance(mcp_metadata, dict) else None
+        if required_token is not None and enforce_token and token is None:
+            return False
+        if required_token is not None and token is not None and str(token) != str(required_token):
+            return False
+
+        if server is None:
+            return True
+
+        servers = self._normalize_server_candidates(server, mcp_metadata)
+        if not servers:
+            return self._normalize_server_name(server) == "legacy"
+        normalized = self._normalize_server_name(server)
+        return normalized in servers
+
+    def _lookup_action_contract(self, app, action_name: str) -> dict[str, Any] | None:
+        try:
+            from muscles.core import get_application_registry
+            registry = get_application_registry(app)
+            if registry is None:
+                return None
+            action = registry.get_action(action_name)
+            if action is None:
+                return None
+            if isinstance(action, dict):
+                return action
+            if hasattr(action, "to_contract"):
+                return action.to_contract()
+            return {
+                "name": getattr(action, "name", action_name),
+                "metadata": getattr(action, "metadata", {}),
+            }
+        except Exception:
+            return None
 
     @staticmethod
     def _resolve_application(app):
