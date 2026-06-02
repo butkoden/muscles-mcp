@@ -24,10 +24,16 @@ copying application logic into the MCP layer.
 Expose a Muscles app as MCP tools and resources, backed by
 `inspect_application(app)` / `muscles inspect --json` compatible contract data.
 
-## Current Stage (Issue #4)
+## Current Stage (Issue #8)
 
-Implemented MCP projection from Muscles inspect contract:
+Implemented MCP projection as a Muscles application strategy:
 
+- `McpStrategy` подключается через `Context(McpStrategy, transport=...)`:
+  - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
+  - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
+  - `transport="mcp"` — опциональный fallback для сценариев совместимости (обычно не нужен).
+- `McpRouter`/`McpServer` removed from public API: register MCP actions через core `register_action` с `metadata["mcp"]`.
+- `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
   - `muscles://app/inspect`
@@ -41,6 +47,11 @@ Implemented MCP projection from Muscles inspect contract:
 - tool input validation is performed by Muscles core;
 - permission/rule denial is returned as structured MCP error mapped from core
   errors.
+- MCP protocol messages are represented by Muscles-based models in
+  `muscles_mcp.schema.mcp`;
+- MCP schema module and class names are protocol-specific and do not reuse core
+  names such as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or
+  `Response`.
 
 ### Run tests
 
@@ -52,6 +63,10 @@ User docs:
 
 - English: [docs/mcp-projection.en.md](docs/mcp-projection.en.md)
 - Русский: [docs/mcp-projection.ru.md](docs/mcp-projection.ru.md)
+
+Runnable example:
+
+- [examples/booking_app.py](examples/booking_app.py)
 
 ## Detailed Usage Example
 
@@ -111,26 +126,33 @@ contract = {
 
 ### 2. Connect MCP to the existing Muscles execution path
 
-The Muscles application is the bridge. MCP receives the app, reads its contract
-through `inspect_application(app)`, and executes tools through
-`ActionDispatcher`.
+The Muscles application is the bridge. The preferred integration is a strategy
+connected to the Muscles context. MCP reads the contract through
+`inspect_application(app)` and executes tools through `ActionDispatcher`.
 
 ```python
-from muscles_mcp import McpAdapter
-
-from muscles import ApplicationMeta, Context, register_action
+from muscles_mcp import McpAdapter, McpStrategy
+from muscles import ApplicationMeta, Context
+from muscles.core import _register_action  # internal API: used here only for docs demo
+from muscles.asgi import AsgiStrategy
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    context = Context(MyStrategy, {})
+    asgi = Context(AsgiStrategy)
+    mcp_context = Context(McpStrategy, transport=asgi)
+
+    # Example with explicit binding without router in MCP context params:
+    # asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
+    # mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
 
 
 app = BookingApp()
 
 
-register_action(
+_register_action(
     app,
     name="bookings.create",
+    description="Create a booking request",
     input_schema={
         "type": "object",
         "properties": {
@@ -139,22 +161,82 @@ register_action(
         },
         "required": ["title"],
     },
+    transports=["mcp"],
+    metadata={
+        "mcp": {
+            "route": "/create",
+            "full_route": "/bookings/create",
+            "name": "bookings.create",
+            "transport": "mcp",
+            "server": "public",
+            "servers": ["public"],
+            "token": "SIMSIM-PUBLIC",
+        }
+    },
     handler=lambda payload, context: {
         "id": 1,
         "title": payload["title"],
         "guest_count": payload.get("guest_count", 1),
         "status": "created",
+        "transport": context.transport,
     },
 )
 
 
+tools = app.mcp_context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")
+admin_tools = app.mcp_context.execute(operation="list_tools", server="admin")
+response = app.mcp_context.execute(
+    operation="call_tool",
+    server="public",
+    token="SIMSIM-PUBLIC",
+    name="bookings.create",
+    arguments={"title": "Discovery call"},
+)
+
+# Compatibility facade for existing callers.
 adapter = McpAdapter.from_application(app)
 ```
+
+See [examples/booking_app.py](examples/booking_app.py) for a complete
+application example that uses a Muscles `Model` as the action input schema.
+MCP now normalizes Model-based schemas during execution automatically.
+If you need a standalone schema builder, use `build_model_json_schema`.
+
+### 2.5. One app for MCP, ASGI and WSGI
+
+A single `App` instance can power MCP, ASGI and WSGI entrypoints.
+Use `make_protocol_app(app, protocol)` to switch protocol handling in one place.
+The same application context, registry, actions, routes, and validation logic stay
+as the single source of truth.
+
+For MCP over HTTP/WSGI/CLI transport (без переключения бизнес-контекста) use:
+
+```python
+from muscles_mcp import make_protocol_app
+
+mcp_http = make_protocol_app(app, "mcp-asgi", route="/mcp")
+mcp_wsgi = make_protocol_app(app, "mcp-wsgi", route="/mcp")
+mcp_cli = make_protocol_app(app, "mcp-cli")
+```
+
+`mcp_asgi/wsgi` accept the same MCP payload (JSON):
+
+```json
+{
+  "operation": "call_tool",
+  "name": "bookings.create",
+  "arguments": {"title": "Booking", "guest_count": 2},
+  "server": "public",
+  "token": "SIMSIM-PUBLIC"
+}
+```
+
+`mcp_cli` executes one request from dict/JSON and prints MCP response.
 
 ### 3. Let an AI client discover available tools
 
 ```python
-tools = adapter.list_tools()
+tools = app.mcp_context.execute(operation="list_tools")
 
 assert tools == [
     {
@@ -178,7 +260,7 @@ the codebase.
 ### 4. Expose Muscles metadata as MCP resources
 
 ```python
-resources = adapter.list_resources()
+resources = app.mcp_context.execute(operation="list_resources")
 
 assert {resource["uri"] for resource in resources} == {
     "muscles://app/inspect",
@@ -188,8 +270,8 @@ assert {resource["uri"] for resource in resources} == {
     "muscles://app/rules",
 }
 
-inspect_resource = adapter.read_resource("muscles://app/inspect")
-actions_resource = adapter.read_resource("muscles://app/actions")
+inspect_resource = app.mcp_context.execute(operation="read_resource", uri="muscles://app/inspect")
+actions_resource = app.mcp_context.execute(operation="read_resource", uri="muscles://app/actions")
 ```
 
 These resources give an agent stable context before it edits or calls the app.
@@ -199,9 +281,10 @@ contract instead of scanning random Python files.
 ### 5. Call a Muscles action through MCP
 
 ```python
-response = adapter.call_tool(
-    "bookings.create",
-    {"title": "Discovery call", "guest_count": 2},
+response = app.mcp_context.execute(
+    operation="call_tool",
+    name="bookings.create",
+    arguments={"title": "Discovery call", "guest_count": 2},
 )
 
 assert response == {
@@ -250,7 +333,7 @@ def denied_handler(payload, context):
     raise ActionPermissionDenied(context.action.name, "Denied by Muscles rules")
 
 
-register_action(app, name="bookings.create", handler=denied_handler)
+_register_action(app, name="bookings.create", handler=denied_handler)
 secure_adapter = McpAdapter.from_application(app)
 denied = secure_adapter.call_tool("bookings.create", {"title": "Call"})
 

@@ -1,16 +1,69 @@
 # MCP Projection
 
-`muscles-mcp` exposes a Muscles application to MCP clients. It does not define a
-separate business model, validation model, permissions model, or action registry.
+`muscles-mcp` exposes a Muscles application to MCP clients as a protocol
+strategy. It does not define a separate business model, validation model,
+permissions model, or action registry.
+
+## Connection
+
+The preferred integration point is a Muscles context:
+
+```python
+from muscles.core import ApplicationMeta, Context
+from muscles_mcp import McpStrategy
+from muscles.asgi import AsgiStrategy
+
+
+class App(metaclass=ApplicationMeta):
+    asgi = Context(AsgiStrategy)
+    mcp = Context(McpStrategy, transport=asgi)
+```
+
+For multi-profile deployments you can create several entrypoint contexts and bind MCP contexts to them directly:
+
+```python
+class App(metaclass=ApplicationMeta):
+    asgi_public = Context(AsgiStrategy, params={"profile": "public"})
+    asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
+
+    mcp_public = Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
+    mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
+```
+
+`McpAdapter.from_application(app)` remains available as a compatibility facade
+for existing callers, but it delegates to the same strategy/projection logic.
+
+`transport` in MCP context declarations points to where MCP is attached:
+- direct protocol label (`"mcp"`, `"mcp-public"`, etc.);
+- entrypoint context object (`transport=asgi`),
+- context name string (`transport="asgi_public"`, `transport="asgi_admin"`).
+
+As a result, MCP context no longer needs `router`/`route` in `params`.
+The entrypoint context already carries the transport boundary.
+Keep route metadata (`route`, `route_prefix`, server visibility) on the
+entrypoint contexts and/or `metadata["mcp"]` on action registration, and use MCP context params
+for strategy/profile metadata only.
+
+Example without `router` in MCP params:
+
+```python
+Context(McpStrategy, transport=asgi_public, params={"mcp_profile": "public"})
+```
+
+A complete user-application example is available in `examples/booking_app.py`.
+It uses a Muscles `Model` as the action `input_schema` and calls the action
+through an MCP context.
 
 ## Discovery
 
 MCP tools and resources are built from the Muscles inspect contract:
 
 ```python
-adapter = McpAdapter.from_application(app)
-tools = adapter.list_tools()
-inspect_resource = adapter.read_resource("muscles://app/inspect")
+tools = app.mcp.execute(operation="list_tools")
+inspect_resource = app.mcp.execute(
+    operation="read_resource",
+    uri="muscles://app/inspect",
+)
 ```
 
 `inspect_application(app)` remains the source of truth.
@@ -20,12 +73,55 @@ inspect_resource = adapter.read_resource("muscles://app/inspect")
 Tool calls go back to Muscles core:
 
 ```python
-response = adapter.call_tool("bookings.create", {"title": "Call"})
+response = app.mcp.execute(
+    operation="call_tool",
+    name="bookings.create",
+    arguments={"title": "Call"},
+)
 ```
 
-Internally the adapter calls `ActionDispatcher(app).execute(...)` with
+Internally the strategy calls `ActionDispatcher(app).execute(...)` with
 `transport="mcp"`. Validation, rules/security, and handler execution happen in
 core.
+
+## Contract Payload Example
+
+You can pass a MCP request contract object directly:
+
+```python
+response = app.mcp.execute(
+    request={
+        "operation": "call_tool",
+        "name": "bookings.create",
+        "arguments": {"title": "Hello MCP", "guest_count": 2},
+    }
+)
+```
+
+The same shape is used for discovery:
+
+```python
+tools = app.mcp.execute(request={"operation": "list_tools"})
+actions = app.mcp.execute(request={"operation": "read_resource", "uri": "muscles://app/actions"})
+```
+
+## Streaming
+
+Stream-capable actions are discovered through `inspect_application(app)`.
+When the core `ActionDispatcher` returns a `StreamResult`, the strategy projects
+each `StreamEvent` into MCP JSON content with `event`, `data`, `id`, and
+`metadata`. If the stream emits an error event, the MCP response gets
+`isError=true`.
+
+## MCP Schemas
+
+MCP protocol message schemas live in `muscles_mcp.schema.mcp`. They inherit from
+Muscles schema primitives, while keeping protocol-specific names:
+`McpToolDescriptor`, `McpToolCallRequest`, `McpToolCallResult`,
+`McpResourceDescriptor`, and `McpResourceReadResult`.
+
+The MCP package avoids module and class names that collide with core names such
+as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or `Response`.
 
 ## Error Mapping
 
@@ -36,5 +132,6 @@ core.
 
 ## State
 
-The adapter is scoped to a concrete application instance. It should not share a
-mutable tool/action registry between applications.
+The strategy is scoped to the concrete application instance received from
+Muscles `Context`. MCP should not share a mutable tool/action registry between
+applications.
