@@ -4,6 +4,7 @@ import json
 import sys
 from typing import Any
 
+from .adapter import McpPayload
 from .adapter import McpAdapter, resolve_mcp_context
 
 
@@ -11,7 +12,7 @@ class ProtocolUnavailableError(RuntimeError):
     """Raised when requested transport protocol package is not installed."""
 
 
-def _as_json_response(payload: dict[str, Any], start_response) -> list[bytes]:
+def _as_json_response(payload: McpPayload, start_response) -> list[bytes]:
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     if start_response is not None:
         start_response(
@@ -24,6 +25,14 @@ def _as_json_response(payload: dict[str, Any], start_response) -> list[bytes]:
     return [body]
 
 
+def _coerce_request_payload(payload: Any) -> dict[str, Any]:
+    if payload is None:
+        return {}
+    if isinstance(payload, dict):
+        return payload
+    raise ValueError("MCP request payload must be a JSON object")
+
+
 def _read_json_body(stream, length: int | None = None) -> dict[str, Any]:
     raw = stream.read() if not length else stream.read(length)
     if not raw:
@@ -31,7 +40,7 @@ def _read_json_body(stream, length: int | None = None) -> dict[str, Any]:
     if isinstance(raw, str):
         raw = raw.encode("utf-8")
     try:
-        return json.loads(raw.decode("utf-8"))
+        return _coerce_request_payload(json.loads(raw.decode("utf-8")))
     except Exception as exc:
         raise ValueError(f"Invalid JSON payload: {exc}") from exc
 
@@ -51,7 +60,7 @@ def _coerce_payload_from_exception(exc: Exception) -> dict[str, Any]:
     }
 
 
-def _execute_mcp_payload(app, payload: dict[str, Any] | None = None, context: str | Any | None = None) -> dict[str, Any]:
+def _execute_mcp_payload(app, payload: dict[str, Any] | None = None, context: str | Any | None = None) -> McpPayload:
     return McpAdapter.from_application(app, context=context).execute(request=payload or None)
 
 
@@ -98,7 +107,7 @@ def make_mcp_asgi_app(app, route: str = "/mcp", context: str | Any | None = None
             )
         else:
             try:
-                response = _execute_mcp_payload(app, payload, context=context)
+                response = _execute_mcp_payload(app, _coerce_request_payload(payload), context=context)
             except Exception as exc:
                 response = _coerce_payload_from_exception(exc)
 
@@ -159,11 +168,15 @@ def make_mcp_cli_command(app, context: str | Any | None = None):
     """Return a callable that executes one MCP request from JSON payload."""
 
     def command(payload: dict[str, Any] | None = None, **kwargs):
-        if payload is None:
-            payload = json.loads(sys.stdin.read() or "{}")
-        if kwargs:
-            payload = {**payload, **kwargs}
-        response = _execute_mcp_payload(app, payload, context=context)
+        try:
+            if payload is None:
+                payload = json.loads(sys.stdin.read() or "{}")
+            payload = _coerce_request_payload(payload)
+            if kwargs:
+                payload = {**payload, **kwargs}
+            response = _execute_mcp_payload(app, payload, context=context)
+        except Exception as exc:
+            response = _coerce_payload_from_exception(exc)
         print(json.dumps(response, ensure_ascii=False, indent=2))
         return response
 

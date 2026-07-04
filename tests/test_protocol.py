@@ -192,3 +192,14 @@ def test_make_mcp_cli_command_executes_operation():
 
     result = command({"operation": "list_tools"})
     assert [item["name"] for item in result] == ["ping"]
+
+
+def test_make_mcp_cli_command_rejects_non_object_payload():
+    app = _build_app()
+    command = make_mcp_cli_command(app)
+
+    result = command(["not-an-object"])
+
+    assert result["isError"] is True
+    assert result["error"]["code"] == "invalid_request"
+    assert "JSON object" in result["error"]["message"]

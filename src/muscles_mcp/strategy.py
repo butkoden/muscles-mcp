@@ -201,7 +201,12 @@ class McpStrategy(BaseStrategy):
             values = list(value)
         else:
             return []
-        return [McpStrategy._normalize_server_name(item) for item in values if McpStrategy._normalize_server_name(item)]
+        normalized: list[str] = []
+        for item in values:
+            name = McpStrategy._normalize_server_name(item)
+            if name:
+                normalized.append(name)
+        return normalized
 
     @staticmethod
     def _entrypoint_context_metadata(entrypoint_context: Any) -> dict[str, Any]:
