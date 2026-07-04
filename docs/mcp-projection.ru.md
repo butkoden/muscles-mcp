@@ -66,6 +66,69 @@ inspect_resource = app.mcp.execute(
 
 `inspect_application(app)` остается источником истины.
 
+## Standalone JSON-RPC server
+
+`McpStrategy` остается основным способом проецировать Muscles application в MCP.
+Для сервисов, которые еще не описаны как Muscles application, или для продуктов
+с собственной бизнес-регистратурой, `McpServer` дает только MCP-протокольную
+обвязку.
+
+```python
+from muscles_mcp import McpResource, McpServer, McpTool, mcp_list_schema
+
+
+server = McpServer(
+    name="assetforge-mcp",
+    version="1.0.0",
+    instructions="Use tools with the connected user's permissions.",
+    tools=[
+        McpTool(
+            name="workspaces.list",
+            description="List workspaces.",
+            input_schema={"type": "object", "properties": {}},
+            output_schema=mcp_list_schema(),
+            read_only=True,
+        )
+    ],
+    resources=[
+        McpResource(
+            uri="assetforge://catalog",
+            name="catalog",
+            description="Service catalog.",
+        )
+    ],
+    call_tool=lambda name, arguments, context: [{"uid": "workspace-full-uid"}],
+    read_resource=lambda uri, arguments, context: {"uri": uri},
+)
+```
+
+`handle_jsonrpc(...)` поддерживает:
+
+- `initialize`;
+- `ping`;
+- `tools/list`;
+- `tools/call`;
+- `resources/list`;
+- `resources/read`;
+- `resources/templates/list`;
+- `prompts/list`;
+- JSON-RPC batch requests и notifications.
+
+Tool descriptors используют MCP protocol names: `inputSchema`, `outputSchema`
+и `annotations` с `readOnlyHint` и `destructiveHint`.
+
+Tool call всегда возвращает `structuredContent` как object:
+
+- `dict` возвращается без изменений;
+- `list` превращается в `{"items": [...], "count": N}`;
+- primitive values и `None` превращаются в `{"value": ...}`.
+
+`content[0].text` сериализует тот же object как JSON text.
+
+Бизнес-логика остается вне `McpServer`: permissions, token validation,
+application audit, CRUD и mapping public payload должны жить в callbacks
+приложения.
+
 ## Tool calls
 
 Tool calls возвращаются в Muscles core:
@@ -134,6 +197,31 @@ Stream-capable actions обнаруживаются через `inspect_applicat
 - `ActionValidationError` -> `invalid_params`;
 - `ActionPermissionDenied` -> `permission_denied`;
 - `ActionExecutionError` -> `execution_error`.
+
+Standalone JSON-RPC errors маппятся в числовые protocol codes:
+
+- invalid request -> `-32600`;
+- invalid params -> `-32602`;
+- method, tool или resource not found -> `-32601`;
+- access denied -> `-32001`;
+- not found -> `-32004`;
+- internal error -> `-32000`.
+
+## OAuth и DCR discovery
+
+`oauth_protected_resource_metadata(...)` и
+`oauth_authorization_server_metadata(...)` собирают ChatGPT-compatible discovery
+metadata для:
+
+- `/.well-known/oauth-protected-resource`;
+- `/.well-known/oauth-protected-resource/mcp`;
+- `/.well-known/oauth-authorization-server`;
+- `/.well-known/oauth-authorization-server/mcp`.
+
+`register_mcp_routes(...)` регистрирует discovery routes, `/oauth/register`,
+`/oauth/authorize`, `/oauth/token` и MCP POST transport route. Helper не хранит
+OAuth clients, authorization codes или access tokens. Для реальной выдачи
+credentials нужно передать `McpOAuthProvider` из host application.
 
 ## State
 

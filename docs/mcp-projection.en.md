@@ -68,6 +68,68 @@ inspect_resource = app.mcp.execute(
 
 `inspect_application(app)` remains the source of truth.
 
+## Standalone JSON-RPC Server
+
+`McpStrategy` is the preferred Muscles projection. For services that are not yet
+modeled as a Muscles application, or for existing products with their own
+business registry, `McpServer` provides only the MCP protocol shell.
+
+```python
+from muscles_mcp import McpResource, McpServer, McpTool, mcp_list_schema
+
+
+server = McpServer(
+    name="assetforge-mcp",
+    version="1.0.0",
+    instructions="Use tools with the connected user's permissions.",
+    tools=[
+        McpTool(
+            name="workspaces.list",
+            description="List workspaces.",
+            input_schema={"type": "object", "properties": {}},
+            output_schema=mcp_list_schema(),
+            read_only=True,
+        )
+    ],
+    resources=[
+        McpResource(
+            uri="assetforge://catalog",
+            name="catalog",
+            description="Service catalog.",
+        )
+    ],
+    call_tool=lambda name, arguments, context: [{"uid": "workspace-full-uid"}],
+    read_resource=lambda uri, arguments, context: {"uri": uri},
+)
+```
+
+`handle_jsonrpc(...)` supports:
+
+- `initialize`;
+- `ping`;
+- `tools/list`;
+- `tools/call`;
+- `resources/list`;
+- `resources/read`;
+- `resources/templates/list`;
+- `prompts/list`;
+- JSON-RPC batch requests and notifications.
+
+Tool descriptors use MCP protocol names: `inputSchema`, `outputSchema`, and
+`annotations` with `readOnlyHint` and `destructiveHint`.
+
+Tool call results always contain object-shaped `structuredContent`:
+
+- dictionaries are returned unchanged;
+- lists become `{"items": [...], "count": N}`;
+- primitives and `None` become `{"value": ...}`.
+
+`content[0].text` serializes the same object as JSON text.
+
+Business logic stays outside `McpServer`: permissions, token validation,
+application audit, CRUD, and public payload mapping must live in the host
+application callbacks.
+
 ## Tool Calls
 
 Tool calls go back to Muscles core:
@@ -129,6 +191,32 @@ as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or `Response`.
 - `ActionValidationError` -> `invalid_params`;
 - `ActionPermissionDenied` -> `permission_denied`;
 - `ActionExecutionError` -> `execution_error`.
+
+Standalone JSON-RPC errors are mapped to protocol numeric codes:
+
+- invalid request -> `-32600`;
+- invalid params -> `-32602`;
+- method, tool, or resource not found -> `-32601`;
+- access denied -> `-32001`;
+- not found -> `-32004`;
+- internal error -> `-32000`.
+
+## OAuth and DCR Discovery
+
+`oauth_protected_resource_metadata(...)` and
+`oauth_authorization_server_metadata(...)` build ChatGPT-compatible discovery
+metadata for:
+
+- `/.well-known/oauth-protected-resource`;
+- `/.well-known/oauth-protected-resource/mcp`;
+- `/.well-known/oauth-authorization-server`;
+- `/.well-known/oauth-authorization-server/mcp`.
+
+`register_mcp_routes(...)` registers discovery routes, `/oauth/register`,
+`/oauth/authorize`, `/oauth/token`, and the MCP POST transport route. The helper
+does not store OAuth clients, authorization codes, or access tokens. Pass an
+`McpOAuthProvider` implementation from the host application when those endpoints
+need to issue real credentials.
 
 ## State
 

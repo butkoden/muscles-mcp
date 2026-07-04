@@ -22,6 +22,9 @@ copying application logic into the MCP layer.
   registry, or business model.
 - A use case implemented once in Muscles should become available through MCP
   without rewriting the use case.
+- The standalone JSON-RPC server owns only protocol shape, OAuth discovery
+  metadata, and serialization. Tool execution, authorization, token storage,
+  audit, and domain payload mapping remain in the host application.
 - Machine-readable metadata is a product feature, not an internal detail.
 - MCP is a protocol projection over `ApplicationMeta`, `Context`, the
   application-scoped registry, `ActionContract`, and `ActionDispatcher`; it is
@@ -40,7 +43,12 @@ Implemented MCP projection as a Muscles application strategy:
   - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
   - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
   - `transport="mcp"` — опциональный fallback для сценариев совместимости (обычно не нужен).
-- `McpRouter`/`McpServer` removed from public API: register MCP actions through the core `@app.action` decorator with `metadata["mcp"]`.
+- legacy `McpRouter` was removed from the Muscles strategy API: register
+  Muscles actions through the core `@app.action` decorator with
+  `metadata["mcp"]`.
+- `McpServer` is available as a standalone JSON-RPC protocol adapter for
+  applications that already own their business tool/resource registry and need
+  MCP-compatible transport responses.
 - `McpAdapter` remains a compatibility facade over the same strategy logic;
 - `list_tools()` from contract `actions`;
 - `list_resources()` for canonical MCP URIs:
@@ -60,6 +68,11 @@ Implemented MCP projection as a Muscles application strategy:
 - MCP schema module and class names are protocol-specific and do not reuse core
   names such as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or
   `Response`.
+- standalone JSON-RPC support includes `initialize`, `ping`, `tools/list`,
+  `tools/call`, `resources/list`, `resources/read`,
+  `resources/templates/list`, `prompts/list`, batch requests, notifications,
+  structured content normalization, JSON-RPC error mapping, and OAuth/DCR
+  discovery helpers.
 
 ### Run tests
 
@@ -75,6 +88,64 @@ User docs:
 Runnable example:
 
 - [examples/booking_app.py](examples/booking_app.py)
+
+## Standalone JSON-RPC Layer
+
+Use `McpServer` when a service already has its own business layer and needs only
+MCP protocol handling. The server receives JSON-RPC messages and delegates
+business work to callbacks supplied by the host application.
+
+```python
+from muscles_mcp import McpResource, McpServer, McpTool, mcp_list_schema
+
+
+server = McpServer(
+    name="assetforge-mcp",
+    version="1.0.0",
+    instructions="Use AssetForge tools with the connected user's permissions.",
+    tools=[
+        McpTool(
+            name="workspaces.list",
+            description="List workspaces available to the current user.",
+            input_schema={"type": "object", "properties": {}},
+            output_schema=mcp_list_schema(),
+            read_only=True,
+        )
+    ],
+    resources=[
+        McpResource(
+            uri="assetforge://catalog",
+            name="catalog",
+            description="Available AssetForge MCP tools and resources.",
+        )
+    ],
+    call_tool=lambda name, arguments, context: [{"uid": "workspace-full-uid"}],
+    read_resource=lambda uri, arguments, context: {"uri": uri},
+)
+
+response = server.handle_jsonrpc(
+    {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {"name": "workspaces.list", "arguments": {}},
+    }
+)
+```
+
+Tool results are normalized so `structuredContent` is always an object:
+
+- `dict` values are returned as-is;
+- `list` values become `{"items": [...], "count": N}`;
+- primitive values and `None` become `{"value": ...}`.
+
+The same object is serialized into `content[0].text`, which keeps the response
+compatible with clients that read either field.
+
+`register_mcp_routes(...)` can register OAuth discovery endpoints and a
+streamable HTTP POST route around a `McpServer`. OAuth client storage,
+authorization codes, token issuing, permission checks, and audit logging stay in
+the host application through provider/callback boundaries.
 
 ## Detailed Usage Example
 
