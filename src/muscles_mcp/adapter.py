@@ -5,6 +5,8 @@ from typing import Any
 from muscles.core import Context
 from .strategy import McpError, McpStrategy
 
+McpPayload = dict[str, Any] | list[dict[str, Any]]
+
 
 def _iter_app_contexts(app) -> list[tuple[str, Context]]:
     contexts: list[tuple[str, Context]] = []
@@ -155,7 +157,7 @@ class McpAdapter:
             default=None,
         )
 
-    def _execute(self, operation: str, **kwargs) -> dict[str, Any]:
+    def _execute(self, operation: str | None, **kwargs) -> McpPayload:
         context = self._resolve_context()
         request = kwargs.get("request") if "request" in kwargs else None
         if context is not None:
@@ -173,17 +175,31 @@ class McpAdapter:
             **{k: v for k, v in kwargs.items() if k != "request"},
         )
 
-    def execute(self, request: dict | None = None, operation: str | None = None, **kwargs) -> dict[str, Any]:
-        return self._execute(operation=operation or (request or {}).get("operation") if request else operation, request=request, **kwargs)
+    @staticmethod
+    def _expect_list(payload: McpPayload, operation: str) -> list[dict[str, Any]]:
+        if isinstance(payload, list):
+            return payload
+        raise TypeError(f"MCP operation '{operation}' returned non-list payload")
+
+    @staticmethod
+    def _expect_dict(payload: McpPayload, operation: str) -> dict[str, Any]:
+        if isinstance(payload, dict):
+            return payload
+        raise TypeError(f"MCP operation '{operation}' returned non-object payload")
+
+    def execute(self, request: dict[str, Any] | None = None, operation: str | None = None, **kwargs) -> McpPayload:
+        request_operation = request.get("operation") if request is not None else None
+        resolved_operation = operation or (str(request_operation) if request_operation is not None else None)
+        return self._execute(operation=resolved_operation, request=request, **kwargs)
 
     def list_tools(self) -> list[dict[str, Any]]:
-        return self._execute("list_tools")
+        return self._expect_list(self._execute("list_tools"), "list_tools")
 
     def list_resources(self) -> list[dict[str, Any]]:
-        return self._execute("list_resources")
+        return self._expect_list(self._execute("list_resources"), "list_resources")
 
     def read_resource(self, uri: str) -> dict[str, Any]:
-        return self._execute("read_resource", uri=uri)
+        return self._expect_dict(self._execute("read_resource", uri=uri), "read_resource")
 
     def call_tool(
         self,
@@ -192,12 +208,15 @@ class McpAdapter:
         server: str | None = None,
         token: str | None = None,
     ) -> dict[str, Any]:
-        return self._execute(
-            operation="call_tool",
-            name=name,
-            arguments=arguments or {},
-            server=server,
-            token=token,
+        return self._expect_dict(
+            self._execute(
+                operation="call_tool",
+                name=name,
+                arguments=arguments or {},
+                server=server,
+                token=token,
+            ),
+            "call_tool",
         )
 
     @staticmethod
