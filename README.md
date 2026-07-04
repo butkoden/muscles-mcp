@@ -5,6 +5,14 @@ Model Context Protocol projection for Muscles.
 This package exposes a Muscles application to AI tools through MCP without
 copying application logic into the MCP layer.
 
+## Related Repositories
+
+- [`muscles`](https://github.com/butkoden/muscles) - core actions, inspect contract, dispatcher and canonical documentation.
+- [`muscles-ai`](https://github.com/butkoden/muscles-ai) - AI/RAG actions that can be exposed as MCP tools.
+- [`muscles-documents`](https://github.com/butkoden/muscles-documents) - document actions that can be exposed to AI tools.
+- [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) - ASGI entrypoint binding for MCP-over-HTTP scenarios.
+- [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) - MCP projection regression checks.
+
 ## Concept Guardrails
 
 - Muscles remains the source of truth for actions, schemas, rules, context,
