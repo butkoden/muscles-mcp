@@ -17,6 +17,8 @@ from .utils import build_model_json_schema
 
 RESOURCE_MAP = {
     "muscles://app/inspect": "inspect",
+    "muscles://app/capabilities": "capabilities",
+    "muscles://app/architecture": "architecture",
     "muscles://app/actions": "actions",
     "muscles://app/routes": "routes",
     "muscles://app/schemas": "schemas",
@@ -126,6 +128,15 @@ class McpStrategy(BaseStrategy):
         contract = self._contract_with_mcp_schemas(app)
         mapping = {
             "muscles://app/inspect": contract,
+            "muscles://app/capabilities": contract.get("capabilities", {}),
+            "muscles://app/architecture": {
+                "contract_version": contract.get("contract_version"),
+                "framework": contract.get("framework"),
+                "packages": contract.get("packages", []),
+                "capabilities": contract.get("capabilities", {}),
+                "actions": contract.get("actions", []),
+                "rules": contract.get("rules", []),
+            },
             "muscles://app/actions": contract.get("actions", []),
             "muscles://app/routes": contract.get("routes", []),
             "muscles://app/schemas": contract.get("schemas", []),

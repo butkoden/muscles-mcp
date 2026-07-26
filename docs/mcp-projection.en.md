@@ -68,6 +68,16 @@ inspect_resource = app.mcp.execute(
 
 `inspect_application(app)` remains the source of truth.
 
+The strategy also exposes two canonical resources for coding agents:
+
+- `muscles://app/capabilities` — capabilities published by installed packages;
+- `muscles://app/architecture` — a compact application contract containing
+  packages, capabilities, action metadata and deterministic rules.
+
+These resources are projections of `inspect_application(app)`. MCP does not
+own a second registry or business-rule system. An AI model may consume the
+rules as implementation guidance, while local doctor/CI checks enforce them.
+
 ## Standalone JSON-RPC Server
 
 `McpStrategy` is the preferred Muscles projection. For services that are not yet

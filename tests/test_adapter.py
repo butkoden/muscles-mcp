@@ -79,6 +79,8 @@ def test_mcp_builds_tools_and_resources_from_core_contract():
     assert {r["uri"] for r in resources} == {
         "muscles://app/inspect",
         "muscles://app/actions",
+        "muscles://app/capabilities",
+        "muscles://app/architecture",
         "muscles://app/routes",
         "muscles://app/schemas",
         "muscles://app/rules",
