@@ -586,10 +586,44 @@ def test_mcp_strategy_accepts_list_resources_from_request_contract():
     assert uris == {
         "muscles://app/inspect",
         "muscles://app/actions",
+        "muscles://app/capabilities",
+        "muscles://app/architecture",
         "muscles://app/routes",
         "muscles://app/schemas",
         "muscles://app/rules",
     }
+
+
+def test_mcp_strategy_projects_capabilities_and_architecture_resources():
+    app, _ = _build_mcp_app()
+    registry = app.__muscles_registry__
+    registry.packages["ai"] = {"namespace": "ai", "name": "AiPackage"}
+    registry.inspection_providers["ai"] = lambda: {
+        "role": "AI runtime",
+        "architecture": {
+            "rules": [
+                {
+                    "id": "ai.state_change.confirmation",
+                    "severity": "error",
+                    "summary": "State-changing actions require confirmation.",
+                }
+            ]
+        },
+    }
+
+    capabilities = app.context.execute(
+        operation="read_resource",
+        uri="muscles://app/capabilities",
+    )["contents"][0]["json"]
+    architecture = app.context.execute(
+        operation="read_resource",
+        uri="muscles://app/architecture",
+    )["contents"][0]["json"]
+
+    assert capabilities["ai"]["role"] == "AI runtime"
+    assert architecture["capabilities"]["ai"]["architecture"]["rules"][0]["id"] == (
+        "ai.state_change.confirmation"
+    )
 
 
 def test_mcp_strategy_accepts_read_resource_from_request_contract():
