@@ -89,6 +89,32 @@ def test_mcp_builds_tools_and_resources_from_core_contract():
     assert inspect_resource["contents"][0]["json"]["actions"][0]["name"] == "bookings.create"
 
 
+def test_mcp_public_contract_redacts_sensitive_metadata_but_keeps_auth_internal():
+    app, _ = _build_app()
+    add_action(
+        app,
+        name="bookings.secure",
+        input_schema={"type": "object", "properties": {}},
+        transports=["mcp"],
+        metadata={
+            "mcp": {"servers": ["public"], "token": "SIMSIM-PUBLIC"},
+            "prompt": "private system prompt",
+            "safe": "visible",
+        },
+        handler=lambda payload, context: {"ok": True},
+    )
+
+    adapter = McpAdapter.from_application(app)
+    tools = adapter._strategy.list_tools(app, server="public", token="SIMSIM-PUBLIC")
+    assert [tool["name"] for tool in tools] == ["bookings.secure"]
+
+    actions = adapter._strategy.read_resource(app, "muscles://app/actions")["contents"][0]["json"]
+    secure = next(item for item in actions if item["name"] == "bookings.secure")
+    assert secure["metadata"]["safe"] == "visible"
+    assert secure["metadata"]["mcp"]["token"] == "<redacted>"
+    assert secure["metadata"]["prompt"] == "<redacted>"
+
+
 def test_mcp_lists_only_actions_open_to_mcp_transport():
     class _App(metaclass=ApplicationMeta):
         context = Context(_EchoStrategy)
