@@ -5,6 +5,15 @@ Model Context Protocol projection for Muscles.
 This package exposes a Muscles application to AI tools through MCP without
 copying application logic into the MCP layer.
 
+## Installation
+
+```bash
+pip install muscles-mcp
+```
+
+The package requires the published `muscles` core and can be combined with
+`muscles-asgi` for MCP-over-HTTP deployments.
+
 ## Related Repositories
 
 - [`muscles`](https://github.com/butkoden/muscles) - core actions, inspect contract, dispatcher and canonical documentation.
