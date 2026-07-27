@@ -11,5 +11,17 @@ license = "MIT"
 requires-python = ">=3.10"
 dependencies = ["muscles>=1.0.0rc1,<2.0.0"]
 
+[project.urls]
+Homepage = "https://github.com/butkoden/muscles-mcp"
+Repository = "https://github.com/butkoden/muscles-mcp"
+Documentation = "https://github.com/butkoden/muscles-mcp#readme"
+PyPI = "https://pypi.org/project/muscles-mcp/"
+Releases = "https://github.com/butkoden/muscles-mcp/releases"
+"muscles" = "https://pypi.org/project/muscles/"
+"muscles-ai" = "https://pypi.org/project/muscles-ai/"
+"muscles-documents" = "https://pypi.org/project/muscles-documents/"
+"muscles-asgi" = "https://pypi.org/project/muscles-asgi/"
+"muscles-benchmarks" = "https://pypi.org/project/muscles-benchmarks/"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
