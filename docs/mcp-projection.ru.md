@@ -66,6 +66,16 @@ inspect_resource = app.mcp.execute(
 
 `inspect_application(app)` остается источником истины.
 
+Помимо существующих ресурсов, стратегия публикует:
+
+- `muscles://app/capabilities` — capabilities всех установленных пакетов;
+- `muscles://app/architecture` — компактный application contract с пакетами,
+  capabilities, action metadata и deterministic rules для coding agents.
+
+Ресурс архитектуры только проецирует данные `inspect_application(app)` и не
+создает отдельный registry или набор бизнес-правил. AI-модель может прочитать
+эти правила как инструкцию, но enforcement выполняется локальным doctor/CI.
+
 ## Standalone JSON-RPC server
 
 `McpStrategy` остается основным способом проецировать Muscles application в MCP.
