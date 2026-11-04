@@ -4,7 +4,7 @@ import types
 
 from muscles.core import ApplicationMeta, BaseStrategy, Context
 
-from muscles_mcp import (
+from muscles.mcp import (
     McpAdapter,
     McpStrategy,
     make_mcp_asgi_app,

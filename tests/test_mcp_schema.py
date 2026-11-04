@@ -1,13 +1,13 @@
 import inspect
 
 from muscles.core import BaseUser, Model
-from muscles_mcp import build_model_json_schema
+from muscles.mcp import build_model_json_schema
 
-from muscles_mcp.schema import mcp
+from muscles.mcp.schema import mcp
 
 
 def test_mcp_protocol_models_live_under_schema_mcp_without_core_name_collisions():
-    assert mcp.__name__.endswith("muscles_mcp.schema.mcp")
+    assert mcp.__name__.endswith("muscles.mcp.schema.mcp")
     assert not hasattr(mcp, "Model")
     assert not hasattr(mcp, "Schema")
     assert not hasattr(mcp, "Response")

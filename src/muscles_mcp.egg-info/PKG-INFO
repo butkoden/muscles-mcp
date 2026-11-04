@@ -1,0 +1,471 @@
+Metadata-Version: 2.1
+Name: muscles-mcp
+Version: 1.0.1
+Summary: MCP adapter for Muscles application contract
+License: MIT
+Project-URL: Homepage, https://github.com/butkoden/muscles-mcp
+Project-URL: Repository, https://github.com/butkoden/muscles-mcp
+Project-URL: Documentation, https://github.com/butkoden/muscles-mcp#readme
+Project-URL: PyPI, https://pypi.org/project/muscles-mcp/
+Project-URL: Releases, https://github.com/butkoden/muscles-mcp/releases
+Project-URL: muscles, https://pypi.org/project/muscles/
+Project-URL: muscles-ai, https://pypi.org/project/muscles-ai/
+Project-URL: muscles-documents, https://pypi.org/project/muscles-documents/
+Project-URL: muscles-asgi, https://pypi.org/project/muscles-asgi/
+Project-URL: muscles-benchmarks, https://pypi.org/project/muscles-benchmarks/
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: muscles<2.0.0,>=1.0.0rc1
+
+# Muscles MCP
+
+Model Context Protocol projection for Muscles.
+
+This package exposes a Muscles application to AI tools through MCP without
+copying application logic into the MCP layer.
+
+## Installation
+
+```bash
+pip install muscles-mcp
+```
+
+The package requires the published `muscles` core and can be combined with
+`muscles-asgi` for MCP-over-HTTP deployments.
+
+## Related Repositories
+
+- [`muscles`](https://github.com/butkoden/muscles) - core actions, inspect contract, dispatcher and canonical documentation.
+- [`muscles-ai`](https://github.com/butkoden/muscles-ai) - AI/RAG actions that can be exposed as MCP tools.
+- [`muscles-documents`](https://github.com/butkoden/muscles-documents) - document actions that can be exposed to AI tools.
+- [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) - ASGI entrypoint binding for MCP-over-HTTP scenarios.
+- [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) - MCP projection regression checks.
+
+## Concept Guardrails
+
+- Muscles remains the source of truth for actions, schemas, rules, context,
+  permissions, and execution.
+- MCP tools/resources must be generated from `inspect_application(app)`.
+- The MCP layer must not invent its own routing, validation, auth, action
+  registry, or business model.
+- A use case implemented once in Muscles should become available through MCP
+  without rewriting the use case.
+- The standalone JSON-RPC server owns only protocol shape, OAuth discovery
+  metadata, and serialization. Tool execution, authorization, token storage,
+  audit, and domain payload mapping remain in the host application.
+- Machine-readable metadata is a product feature, not an internal detail.
+- MCP is a protocol projection over `ApplicationMeta`, `Context`, the
+  application-scoped registry, `ActionContract`, and `ActionDispatcher`; it is
+  not a separate runtime next to Muscles.
+
+## Implemented Features
+
+Implemented MCP projection as a Muscles application strategy:
+
+- `McpStrategy` подключается через `Context(McpStrategy, transport=...)`:
+  - `transport=asgi` — MCP-контекст привязывается к ASGI entrypoint-контексту;
+  - `transport=<asgi_context_name>` или `transport=<asgi_context_obj>` — явная связка с конкретным entrypoint;
+  - `transport="mcp"` — опциональный fallback для сценариев совместимости (обычно не нужен).
+- legacy `McpRouter` was removed from the Muscles strategy API: register
+  Muscles actions through the core `@app.action` decorator with
+  `metadata["mcp"]`.
+- `McpServer` is available as a standalone JSON-RPC protocol adapter for
+  applications that already own their business tool/resource registry and need
+  MCP-compatible transport responses.
+- `McpAdapter` remains a compatibility facade over the same strategy logic;
+- `list_tools()` from contract `actions`;
+- `list_resources()` for canonical MCP URIs:
+  - `muscles://app/inspect`
+  - `muscles://app/actions`
+  - `muscles://app/routes`
+  - `muscles://app/schemas`
+  - `muscles://app/rules`
+- `read_resource(uri)` returns stable JSON payload per resource;
+- `call_tool()` delegates to Muscles core `ActionDispatcher` with
+  `transport="mcp"` (no business-logic copy);
+- tool input validation is performed by Muscles core;
+- permission/rule denial is returned as structured MCP error mapped from core
+  errors.
+- MCP protocol messages are represented by Muscles-based models in
+  `muscles.mcp.schema.mcp`;
+- MCP schema module and class names are protocol-specific and do not reuse core
+  names such as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or
+  `Response`.
+- standalone JSON-RPC support includes `initialize`, `ping`, `tools/list`,
+  `tools/call`, `resources/list`, `resources/read`,
+  `resources/templates/list`, `prompts/list`, batch requests, notifications,
+  structured content normalization, JSON-RPC error mapping, and OAuth/DCR
+  discovery helpers.
+
+### Run tests
+
+```bash
+python -m pytest -q
+```
+
+User docs:
+
+- English: [docs/mcp-projection.en.md](docs/mcp-projection.en.md)
+- Русский: [docs/mcp-projection.ru.md](docs/mcp-projection.ru.md)
+
+Runnable example:
+
+- [examples/booking_app.py](examples/booking_app.py)
+
+## Standalone JSON-RPC Layer
+
+Use `McpServer` when a service already has its own business layer and needs only
+MCP protocol handling. The server receives JSON-RPC messages and delegates
+business work to callbacks supplied by the host application.
+
+```python
+from muscles.mcp import McpResource, McpServer, McpTool, mcp_list_schema
+
+
+server = McpServer(
+    name="assetforge-mcp",
+    version="1.0.0",
+    instructions="Use AssetForge tools with the connected user's permissions.",
+    tools=[
+        McpTool(
+            name="workspaces.list",
+            description="List workspaces available to the current user.",
+            input_schema={"type": "object", "properties": {}},
+            output_schema=mcp_list_schema(),
+            read_only=True,
+        )
+    ],
+    resources=[
+        McpResource(
+            uri="assetforge://catalog",
+            name="catalog",
+            description="Available AssetForge MCP tools and resources.",
+        )
+    ],
+    call_tool=lambda name, arguments, context: [{"uid": "workspace-full-uid"}],
+    read_resource=lambda uri, arguments, context: {"uri": uri},
+)
+
+response = server.handle_jsonrpc(
+    {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {"name": "workspaces.list", "arguments": {}},
+    }
+)
+```
+
+Tool results are normalized so `structuredContent` is always an object:
+
+- `dict` values are returned as-is;
+- `list` values become `{"items": [...], "count": N}`;
+- primitive values and `None` become `{"value": ...}`.
+
+The same object is serialized into `content[0].text`, which keeps the response
+compatible with clients that read either field.
+
+`register_mcp_routes(...)` can register OAuth discovery endpoints and a
+streamable HTTP POST route around a `McpServer`. OAuth client storage,
+authorization codes, token issuing, permission checks, and audit logging stay in
+the host application through provider/callback boundaries.
+
+## Detailed Usage Example
+
+This example shows the intended architecture:
+
+- Muscles owns the application contract and business execution.
+- `muscles-mcp` exposes that contract as MCP tools and resources.
+- The adapter does not copy use cases, permissions, routes, or validation rules.
+
+### 1. Describe an action in the Muscles contract
+
+In a real application this contract should come from `inspect_application(app)`
+or `muscles inspect --json`. The important part is that the action is described
+once by Muscles and then reused by MCP.
+
+```python
+contract = {
+    "contract_version": "1",
+    "framework": "Muscles",
+    "app": "BookingApp",
+    "actions": [
+        {
+            "name": "bookings.create",
+            "description": "Create a booking request",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "guest_count": {"type": "integer"},
+                },
+                "required": ["title"],
+            },
+        }
+    ],
+    "routes": [
+        {
+            "name": "bookings.create",
+            "path": "/bookings",
+            "method": "POST",
+        }
+    ],
+    "schemas": [
+        {
+            "name": "BookingCreate",
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "guest_count": {"type": "integer"},
+            },
+        }
+    ],
+    "rules": [
+        {"name": "bookings.public_create"}
+    ],
+}
+```
+
+### 2. Connect MCP to the existing Muscles execution path
+
+The Muscles application is the bridge. The preferred integration is a strategy
+connected to the Muscles context. MCP reads the contract through
+`inspect_application(app)` and executes tools through `ActionDispatcher`.
+
+```python
+from muscles.mcp import McpAdapter, McpStrategy
+from muscles import ApplicationMeta, Context
+from muscles.asgi import AsgiStrategy
+
+
+class BookingApp(metaclass=ApplicationMeta):
+    asgi = Context(AsgiStrategy)
+    mcp_context = Context(McpStrategy, transport=asgi)
+
+    # Example with explicit binding without router in MCP context params:
+    # asgi_admin = Context(AsgiStrategy, params={"profile": "admin"})
+    # mcp_admin = Context(McpStrategy, transport=asgi_admin, params={"mcp_profile": "admin"})
+
+
+app = BookingApp()
+
+
+@app.action(
+    name="bookings.create",
+    description="Create a booking request",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "title": {"type": "string"},
+            "guest_count": {"type": "integer"},
+        },
+        "required": ["title"],
+    },
+    transports=["mcp"],
+    metadata={
+        "mcp": {
+            "route": "/create",
+            "full_route": "/bookings/create",
+            "name": "bookings.create",
+            "transport": "mcp",
+            "server": "public",
+            "servers": ["public"],
+            "token": "SIMSIM-PUBLIC",
+        }
+    },
+)
+def create_booking(payload, context):
+    return {
+        "id": 1,
+        "title": payload["title"],
+        "guest_count": payload.get("guest_count", 1),
+        "status": "created",
+        "transport": context.transport,
+    }
+
+
+tools = app.mcp_context.execute(operation="list_tools", server="public", token="SIMSIM-PUBLIC")
+admin_tools = app.mcp_context.execute(operation="list_tools", server="admin")
+response = app.mcp_context.execute(
+    operation="call_tool",
+    server="public",
+    token="SIMSIM-PUBLIC",
+    name="bookings.create",
+    arguments={"title": "Discovery call"},
+)
+
+# Compatibility facade for existing callers.
+adapter = McpAdapter.from_application(app)
+```
+
+See [examples/booking_app.py](examples/booking_app.py) for a complete
+application example that uses a Muscles `Model` as the action input schema.
+MCP now normalizes Model-based schemas during execution automatically.
+If you need a standalone schema builder, use `build_model_json_schema`.
+
+### 2.5. One app for MCP, ASGI and WSGI
+
+A single `App` instance can power MCP, ASGI and WSGI entrypoints.
+Use `make_protocol_app(app, protocol)` to switch protocol handling in one place.
+The same application context, registry, actions, routes, and validation logic stay
+as the single source of truth.
+
+For MCP over HTTP/WSGI/CLI transport (без переключения бизнес-контекста) use:
+
+```python
+from muscles.mcp import make_protocol_app
+
+mcp_http = make_protocol_app(app, "mcp-asgi", route="/mcp")
+mcp_wsgi = make_protocol_app(app, "mcp-wsgi", route="/mcp")
+mcp_cli = make_protocol_app(app, "mcp-cli")
+```
+
+`mcp_asgi/wsgi` accept the same MCP payload (JSON):
+
+```json
+{
+  "operation": "call_tool",
+  "name": "bookings.create",
+  "arguments": {"title": "Booking", "guest_count": 2},
+  "server": "public",
+  "token": "SIMSIM-PUBLIC"
+}
+```
+
+`mcp_cli` executes one request from dict/JSON and prints MCP response.
+
+### 3. Let an AI client discover available tools
+
+```python
+tools = app.mcp_context.execute(operation="list_tools")
+
+assert tools == [
+    {
+        "name": "bookings.create",
+        "description": "Create a booking request",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "guest_count": {"type": "integer"},
+            },
+            "required": ["title"],
+        },
+    }
+]
+```
+
+An AI client should use this list instead of guessing which functions exist in
+the codebase.
+
+### 4. Expose Muscles metadata as MCP resources
+
+```python
+resources = app.mcp_context.execute(operation="list_resources")
+
+assert {resource["uri"] for resource in resources} == {
+    "muscles://app/inspect",
+    "muscles://app/actions",
+    "muscles://app/routes",
+    "muscles://app/schemas",
+    "muscles://app/rules",
+}
+
+inspect_resource = app.mcp_context.execute(operation="read_resource", uri="muscles://app/inspect")
+actions_resource = app.mcp_context.execute(operation="read_resource", uri="muscles://app/actions")
+```
+
+These resources give an agent stable context before it edits or calls the app.
+The agent can inspect routes, actions, schemas, and rules through one official
+contract instead of scanning random Python files.
+
+### 5. Call a Muscles action through MCP
+
+```python
+response = app.mcp_context.execute(
+    operation="call_tool",
+    name="bookings.create",
+    arguments={"title": "Discovery call", "guest_count": 2},
+)
+
+assert response == {
+    "content": [
+        {
+            "type": "json",
+            "json": {
+                "id": 1,
+                "title": "Discovery call",
+                "guest_count": 2,
+                "status": "created",
+            },
+        }
+    ]
+}
+```
+
+The MCP adapter does not know how to create a booking. It delegates execution to
+the Muscles dispatcher, where validation, rules and the use case live.
+
+### 6. Validation and permission errors stay structured
+
+If a required argument is missing, the adapter returns a machine-readable error:
+
+```python
+missing_title = adapter.call_tool("bookings.create", {"guest_count": 2})
+
+assert missing_title == {
+    "isError": True,
+    "error": {
+        "code": "invalid_params",
+        "message": "'title' is a required property",
+        "data": {"path": []},
+    },
+}
+```
+
+If the Muscles rules/security layer denies the action, the core dispatcher raises
+`ActionPermissionDenied` and MCP maps it to a protocol error:
+
+```python
+from muscles import ActionPermissionDenied
+
+
+def denied_handler(payload, context):
+    raise ActionPermissionDenied(context.action.name, "Denied by Muscles rules")
+
+
+app.action(name="bookings.create")(denied_handler)
+secure_adapter = McpAdapter.from_application(app)
+denied = secure_adapter.call_tool("bookings.create", {"title": "Call"})
+
+assert denied == {
+    "isError": True,
+    "error": {
+        "code": "permission_denied",
+        "message": "Denied by Muscles rules",
+        "data": None,
+    },
+}
+```
+
+This keeps MCP aligned with the framework: security decisions belong to Muscles,
+while MCP only transports the structured result.
+
+### 7. Build from a real Muscles application
+
+When the app already supports `inspect_application(app)`, use
+`McpAdapter.from_application(app)`:
+
+```python
+from muscles.mcp import McpAdapter
+
+adapter = McpAdapter.from_application(app)
+
+tools = adapter.list_tools()
+inspect_resource = adapter.read_resource("muscles://app/inspect")
+result = adapter.call_tool("bookings.create", {"title": "Call"})
+```
+
+`from_application()` delegates tool execution to `ActionDispatcher` with
+`transport="mcp"`. The application model, rules, schemas and use cases stay in
+Muscles.

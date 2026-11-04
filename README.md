@@ -39,12 +39,7 @@ The package requires the published `muscles` core and can be combined with
   application-scoped registry, `ActionContract`, and `ActionDispatcher`; it is
   not a separate runtime next to Muscles.
 
-## Initial Goal
-
-Expose a Muscles app as MCP tools and resources, backed by
-`inspect_application(app)` / `muscles inspect --json` compatible contract data.
-
-## Current Stage (Issue #8)
+## Implemented Features
 
 Implemented MCP projection as a Muscles application strategy:
 
@@ -73,7 +68,7 @@ Implemented MCP projection as a Muscles application strategy:
 - permission/rule denial is returned as structured MCP error mapped from core
   errors.
 - MCP protocol messages are represented by Muscles-based models in
-  `muscles_mcp.schema.mcp`;
+  `muscles.mcp.schema.mcp`;
 - MCP schema module and class names are protocol-specific and do not reuse core
   names such as `schema.py`, `model.py`, `response.py`, `Model`, `Schema`, or
   `Response`.
@@ -105,7 +100,7 @@ MCP protocol handling. The server receives JSON-RPC messages and delegates
 business work to callbacks supplied by the host application.
 
 ```python
-from muscles_mcp import McpResource, McpServer, McpTool, mcp_list_schema
+from muscles.mcp import McpResource, McpServer, McpTool, mcp_list_schema
 
 
 server = McpServer(
@@ -219,7 +214,7 @@ connected to the Muscles context. MCP reads the contract through
 `inspect_application(app)` and executes tools through `ActionDispatcher`.
 
 ```python
-from muscles_mcp import McpAdapter, McpStrategy
+from muscles.mcp import McpAdapter, McpStrategy
 from muscles import ApplicationMeta, Context
 from muscles.asgi import AsgiStrategy
 
@@ -299,7 +294,7 @@ as the single source of truth.
 For MCP over HTTP/WSGI/CLI transport (без переключения бизнес-контекста) use:
 
 ```python
-from muscles_mcp import make_protocol_app
+from muscles.mcp import make_protocol_app
 
 mcp_http = make_protocol_app(app, "mcp-asgi", route="/mcp")
 mcp_wsgi = make_protocol_app(app, "mcp-wsgi", route="/mcp")
@@ -443,7 +438,7 @@ When the app already supports `inspect_application(app)`, use
 `McpAdapter.from_application(app)`:
 
 ```python
-from muscles_mcp import McpAdapter
+from muscles.mcp import McpAdapter
 
 adapter = McpAdapter.from_application(app)
 

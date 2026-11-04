@@ -10,7 +10,7 @@ The preferred integration point is a Muscles context:
 
 ```python
 from muscles.core import ApplicationMeta, Context
-from muscles_mcp import McpStrategy
+from muscles.mcp import McpStrategy
 from muscles.asgi import AsgiStrategy
 
 
@@ -85,7 +85,7 @@ modeled as a Muscles application, or for existing products with their own
 business registry, `McpServer` provides only the MCP protocol shell.
 
 ```python
-from muscles_mcp import McpResource, McpServer, McpTool, mcp_list_schema
+from muscles.mcp import McpResource, McpServer, McpTool, mcp_list_schema
 
 
 server = McpServer(
@@ -187,7 +187,7 @@ each `StreamEvent` into MCP JSON content with `event`, `data`, `id`, and
 
 ## MCP Schemas
 
-MCP protocol message schemas live in `muscles_mcp.schema.mcp`. They inherit from
+MCP protocol message schemas live in `muscles.mcp.schema.mcp`. They inherit from
 Muscles schema primitives, while keeping protocol-specific names:
 `McpToolDescriptor`, `McpToolCallRequest`, `McpToolCallResult`,
 `McpResourceDescriptor`, and `McpResourceReadResult`.

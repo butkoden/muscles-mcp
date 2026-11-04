@@ -12,7 +12,7 @@ from muscles.core import (
 
 import pytest
 
-from muscles_mcp import McpAdapter, McpError, McpStrategy, build_model_json_schema
+from muscles.mcp import McpAdapter, McpError, McpStrategy, build_model_json_schema
 
 
 class _EchoStrategy(BaseStrategy):

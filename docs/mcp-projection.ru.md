@@ -10,7 +10,7 @@ permissions model или action registry.
 
 ```python
 from muscles.core import ApplicationMeta, Context
-from muscles_mcp import McpStrategy
+from muscles.mcp import McpStrategy
 from muscles.asgi import AsgiStrategy
 
 
@@ -84,7 +84,7 @@ inspect_resource = app.mcp.execute(
 обвязку.
 
 ```python
-from muscles_mcp import McpResource, McpServer, McpTool, mcp_list_schema
+from muscles.mcp import McpResource, McpServer, McpTool, mcp_list_schema
 
 
 server = McpServer(
@@ -193,7 +193,7 @@ Stream-capable actions обнаруживаются через `inspect_applicat
 
 ## MCP-схемы
 
-Схемы MCP protocol messages находятся в `muscles_mcp.schema.mcp`. Они
+Схемы MCP protocol messages находятся в `muscles.mcp.schema.mcp`. Они
 наследуются от Muscles schema primitives, но названы protocol-specific:
 `McpToolDescriptor`, `McpToolCallRequest`, `McpToolCallResult`,
 `McpResourceDescriptor`, `McpResourceReadResult`.

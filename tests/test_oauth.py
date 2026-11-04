@@ -1,4 +1,4 @@
-from muscles_mcp import (
+from muscles.mcp import (
     McpServer,
     oauth_authorization_server_metadata,
     oauth_protected_resource_metadata,

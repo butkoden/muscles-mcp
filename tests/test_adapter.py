@@ -5,9 +5,9 @@ from muscles.core import (
     Context,
 )
 
-from muscles_mcp import McpAdapter
-from muscles_mcp.strategy import McpStrategy
-from muscles_mcp.adapter import resolve_mcp_context
+from muscles.mcp import McpAdapter
+from muscles.mcp.strategy import McpStrategy
+from muscles.mcp.adapter import resolve_mcp_context
 
 
 class _EchoStrategy(BaseStrategy):

@@ -1,0 +1,1833 @@
+{
+  "version": "1.0.0",
+  "schema_version": 1,
+  "project": {
+    "name": "muscles-mcp",
+    "is_monorepo": false,
+    "total_files": 22,
+    "entry_points": [
+      "src/muscles_mcp/server.py"
+    ],
+    "tech_stack": [
+      {
+        "name": "Python",
+        "version": null,
+        "category": "language"
+      }
+    ],
+    "entry_candidates": [
+      "src/muscles_mcp/server.py"
+    ],
+    "graph_mode": "flow"
+  },
+  "nodes": [
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpErrorPayload",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpErrorPayload",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpJsonMimeType",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpJsonMimeType",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpJsonPayload",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpJsonPayload",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpOperation",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpOperation",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpProtocolRequest",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpProtocolRequest",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpResourceContent",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpResourceContent",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpResourceDescriptor",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpResourceDescriptor",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpResourceReadResult",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpResourceReadResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpStreamEventContent",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpStreamEventContent",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpToolCallRequest",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpToolCallRequest",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpToolCallResult",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpToolCallResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpToolDescriptor",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpToolDescriptor",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/schema/mcp.py:McpToolJsonContent",
+      "type": "class",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "McpToolJsonContent",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/strategy.py:McpError",
+      "type": "class",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "McpError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_mcp/strategy.py:McpStrategy",
+      "type": "class",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "McpStrategy",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "file:.github/workflows/ci.yml",
+      "type": "pipeline",
+      "filePath": ".github/workflows/ci.yml",
+      "language": "yaml",
+      "symbolCount": 0,
+      "lineCount": 11,
+      "complexity": "simple",
+      "pagerank": 0.022811,
+      "communityId": 2,
+      "tags": [
+        "config",
+        "ci"
+      ],
+      "summary": "GitHub Actions CI/CD workflow definition."
+    },
+    {
+      "id": "file:.github/workflows/release.yml",
+      "type": "pipeline",
+      "filePath": ".github/workflows/release.yml",
+      "language": "yaml",
+      "symbolCount": 0,
+      "lineCount": 24,
+      "complexity": "simple",
+      "pagerank": 0.022811,
+      "communityId": 3,
+      "tags": [
+        "config",
+        "ci"
+      ],
+      "summary": "GitHub Actions CI/CD workflow definition."
+    },
+    {
+      "id": "file:README.md",
+      "type": "document",
+      "filePath": "README.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 373,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 4,
+      "tags": [],
+      "summary": "Project overview and entry point for new readers."
+    },
+    {
+      "id": "file:docs/mcp-projection.en.md",
+      "type": "document",
+      "filePath": "docs/mcp-projection.en.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 192,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 5,
+      "tags": [],
+      "summary": "Documentation: mcp-projection.en.md."
+    },
+    {
+      "id": "file:docs/mcp-projection.ru.md",
+      "type": "document",
+      "filePath": "docs/mcp-projection.ru.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 246,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 6,
+      "tags": [],
+      "summary": "Documentation: mcp-projection.ru.md."
+    },
+    {
+      "id": "file:docs/release-candidate.md",
+      "type": "document",
+      "filePath": "docs/release-candidate.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 10,
+      "complexity": "simple",
+      "pagerank": 0.022811,
+      "communityId": 7,
+      "tags": [],
+      "summary": "Documentation: release-candidate.md."
+    },
+    {
+      "id": "file:examples/booking_app.py",
+      "type": "file",
+      "filePath": "examples/booking_app.py",
+      "language": "python",
+      "symbolCount": 6,
+      "lineCount": 57,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Docs & Tooling module booking_app defining BookingCreate, BookingApp, _mcp_metadata.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:pyproject.toml",
+      "type": "config",
+      "filePath": "pyproject.toml",
+      "language": "toml",
+      "symbolCount": 0,
+      "lineCount": 23,
+      "complexity": "simple",
+      "pagerank": 0.022811,
+      "communityId": 8,
+      "tags": [
+        "config"
+      ],
+      "summary": "Python project metadata, dependencies, and build configuration."
+    },
+    {
+      "id": "file:src/muscles_mcp/__init__.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/__init__.py",
+      "language": "python",
+      "symbolCount": 1,
+      "lineCount": 40,
+      "complexity": "simple",
+      "pagerank": 0.132682,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module __init__ (1 symbols).",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/adapter.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/adapter.py",
+      "language": "python",
+      "symbolCount": 20,
+      "lineCount": 187,
+      "complexity": "complex",
+      "pagerank": 0.090393,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module adapter defining _iter_app_contexts, _context_transport_name, _matches_transport.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/protocols.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/protocols.py",
+      "language": "python",
+      "symbolCount": 12,
+      "lineCount": 207,
+      "complexity": "moderate",
+      "pagerank": 0.045367,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module protocols defining ProtocolUnavailableError, _as_json_response, _coerce_request_payload.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/schema/__init__.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/schema/__init__.py",
+      "language": "python",
+      "symbolCount": 1,
+      "lineCount": 0,
+      "complexity": "simple",
+      "pagerank": 0.029274,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module __init__ (1 symbols).",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/schema/mcp.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "language": "python",
+      "symbolCount": 43,
+      "lineCount": 248,
+      "complexity": "complex",
+      "pagerank": 0.108842,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module mcp defining _json_value, _json_payload, McpJsonMimeType.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/server.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/server.py",
+      "language": "python",
+      "symbolCount": 53,
+      "lineCount": 510,
+      "complexity": "complex",
+      "pagerank": 0.045367,
+      "communityId": 0,
+      "tags": [
+        "entry_point"
+      ],
+      "summary": "Application module server defining mcp_object_schema, mcp_list_schema, mcp_value_schema.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/strategy.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "language": "python",
+      "symbolCount": 23,
+      "lineCount": 389,
+      "complexity": "complex",
+      "pagerank": 0.128665,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module strategy defining McpStrategy, execute, _resolve_operation.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_mcp/utils.py",
+      "type": "file",
+      "filePath": "src/muscles_mcp/utils.py",
+      "language": "python",
+      "symbolCount": 2,
+      "lineCount": 33,
+      "complexity": "simple",
+      "pagerank": 0.100053,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module utils defining build_model_json_schema.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_adapter.py",
+      "type": "file",
+      "filePath": "tests/test_adapter.py",
+      "language": "python",
+      "symbolCount": 21,
+      "lineCount": 277,
+      "complexity": "complex",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for adapter.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_jsonrpc_server.py",
+      "type": "file",
+      "filePath": "tests/test_jsonrpc_server.py",
+      "language": "python",
+      "symbolCount": 12,
+      "lineCount": 224,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for jsonrpc_server.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_mcp_schema.py",
+      "type": "file",
+      "filePath": "tests/test_mcp_schema.py",
+      "language": "python",
+      "symbolCount": 8,
+      "lineCount": 93,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for mcp_schema.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_oauth.py",
+      "type": "file",
+      "filePath": "tests/test_oauth.py",
+      "language": "python",
+      "symbolCount": 5,
+      "lineCount": 68,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for oauth.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_protocol.py",
+      "type": "file",
+      "filePath": "tests/test_protocol.py",
+      "language": "python",
+      "symbolCount": 13,
+      "lineCount": 141,
+      "complexity": "moderate",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for protocol.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_strategy.py",
+      "type": "file",
+      "filePath": "tests/test_strategy.py",
+      "language": "python",
+      "symbolCount": 25,
+      "lineCount": 478,
+      "complexity": "complex",
+      "pagerank": 0.022811,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for strategy.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:__eq__",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "__eq__",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:_json_payload",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "_json_payload",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:_json_value",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "_json_value",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:_payload_value",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "_payload_value",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:failure",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "failure",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:from_action_contract",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "from_action_contract",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:from_core_event",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "from_core_event",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:from_json",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "from_json",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:from_payload",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "from_payload",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:normalize",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "normalize",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:stream",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "stream",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:success",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "success",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "to_payload",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/schema/mcp.py:validate",
+      "type": "function",
+      "filePath": "src/muscles_mcp/schema/mcp.py",
+      "name": "validate",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:__init__",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "__init__",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_action_allowed_for_server",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_action_allowed_for_server",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_build_action_lookup",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_build_action_lookup",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_coerce_model_schema",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_coerce_model_schema",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_contract",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_contract",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_contract_with_mcp_schemas",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_contract_with_mcp_schemas",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_entrypoint_context_metadata",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_entrypoint_context_metadata",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_lookup_action_contract",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_lookup_action_contract",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_normalize_server_candidates",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_normalize_server_candidates",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_normalize_server_list",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_normalize_server_list",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_normalize_server_name",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_normalize_server_name",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_resolve_application",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_resolve_application",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_resolve_operation",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_resolve_operation",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:_resolve_request_payload",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "_resolve_request_payload",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:call_tool",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "call_tool",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:execute",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "execute",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:list_resources",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "list_resources",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:list_tools",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "list_tools",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:map_core_error",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "map_core_error",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/strategy.py:read_resource",
+      "type": "function",
+      "filePath": "src/muscles_mcp/strategy.py",
+      "name": "read_resource",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_mcp/utils.py:build_model_json_schema",
+      "type": "function",
+      "filePath": "src/muscles_mcp/utils.py",
+      "name": "build_model_json_schema",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:examples/booking_app.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/__init__.py",
+      "target": "file:src/muscles_mcp/adapter.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/__init__.py",
+      "target": "file:src/muscles_mcp/protocols.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/__init__.py",
+      "target": "file:src/muscles_mcp/server.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/__init__.py",
+      "target": "file:src/muscles_mcp/strategy.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/__init__.py",
+      "target": "file:src/muscles_mcp/utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/adapter.py",
+      "target": "file:src/muscles_mcp/strategy.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/protocols.py",
+      "target": "file:src/muscles_mcp/adapter.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/__init__.py",
+      "target": "file:src/muscles_mcp/schema/mcp.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpErrorPayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpJsonMimeType",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpJsonPayload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpOperation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpProtocolRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpResourceContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpResourceDescriptor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpResourceReadResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpStreamEventContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpToolCallRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpToolCallResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpToolDescriptor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "class:src/muscles_mcp/schema/mcp.py:McpToolJsonContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:__eq__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:_json_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:_json_value",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:_payload_value",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:failure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_action_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_core_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_json",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:normalize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:stream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py",
+      "target": "function:src/muscles_mcp/schema/mcp.py:validate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpErrorPayload",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpJsonMimeType",
+      "target": "function:src/muscles_mcp/schema/mcp.py:normalize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpJsonMimeType",
+      "target": "function:src/muscles_mcp/schema/mcp.py:validate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpJsonPayload",
+      "target": "function:src/muscles_mcp/schema/mcp.py:__eq__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpJsonPayload",
+      "target": "function:src/muscles_mcp/schema/mcp.py:normalize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpJsonPayload",
+      "target": "function:src/muscles_mcp/schema/mcp.py:validate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpOperation",
+      "target": "function:src/muscles_mcp/schema/mcp.py:normalize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpOperation",
+      "target": "function:src/muscles_mcp/schema/mcp.py:validate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpProtocolRequest",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpResourceContent",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_json",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpResourceContent",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpResourceDescriptor",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpResourceReadResult",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_json",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpResourceReadResult",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpStreamEventContent",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_core_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpStreamEventContent",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolCallRequest",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolCallRequest",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolCallResult",
+      "target": "function:src/muscles_mcp/schema/mcp.py:failure",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolCallResult",
+      "target": "function:src/muscles_mcp/schema/mcp.py:stream",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolCallResult",
+      "target": "function:src/muscles_mcp/schema/mcp.py:success",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolCallResult",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolDescriptor",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_action_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolDescriptor",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolJsonContent",
+      "target": "function:src/muscles_mcp/schema/mcp.py:from_json",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/schema/mcp.py::McpToolJsonContent",
+      "target": "function:src/muscles_mcp/schema/mcp.py:to_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "class:src/muscles_mcp/strategy.py:McpError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "class:src/muscles_mcp/strategy.py:McpStrategy",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "file:src/muscles_mcp/schema/mcp.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "file:src/muscles_mcp/utils.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:__init__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_action_allowed_for_server",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_build_action_lookup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_coerce_model_schema",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_contract_with_mcp_schemas",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_entrypoint_context_metadata",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_lookup_action_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_normalize_server_candidates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_normalize_server_list",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_normalize_server_name",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_resolve_application",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_resolve_operation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:_resolve_request_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:call_tool",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:execute",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:list_resources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:list_tools",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:map_core_error",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py",
+      "target": "function:src/muscles_mcp/strategy.py:read_resource",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpError",
+      "target": "function:src/muscles_mcp/strategy.py:__init__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_action_allowed_for_server",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_build_action_lookup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_coerce_model_schema",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_contract_with_mcp_schemas",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_entrypoint_context_metadata",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_lookup_action_contract",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_normalize_server_candidates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_normalize_server_list",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_normalize_server_name",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_resolve_application",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_resolve_operation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:_resolve_request_payload",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:call_tool",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:execute",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:list_resources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:list_tools",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:map_core_error",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/strategy.py::McpStrategy",
+      "target": "function:src/muscles_mcp/strategy.py:read_resource",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_mcp/utils.py",
+      "target": "function:src/muscles_mcp/utils.py:build_model_json_schema",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_adapter.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_adapter.py",
+      "target": "file:src/muscles_mcp/adapter.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_adapter.py",
+      "target": "file:src/muscles_mcp/strategy.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_jsonrpc_server.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_mcp_schema.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_mcp_schema.py",
+      "target": "file:src/muscles_mcp/schema/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_mcp_schema.py",
+      "target": "file:src/muscles_mcp/schema/mcp.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_oauth.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_protocol.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_strategy.py",
+      "target": "file:src/muscles_mcp/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:application",
+      "name": "Application",
+      "description": "",
+      "nodeIds": [
+        "file:README.md",
+        "file:pyproject.toml",
+        "file:src/muscles_mcp/__init__.py",
+        "file:src/muscles_mcp/adapter.py",
+        "file:src/muscles_mcp/protocols.py",
+        "file:src/muscles_mcp/schema/__init__.py",
+        "file:src/muscles_mcp/schema/mcp.py",
+        "file:src/muscles_mcp/server.py",
+        "file:src/muscles_mcp/strategy.py",
+        "file:src/muscles_mcp/utils.py"
+      ],
+      "display_order": 0,
+      "order_basis": "canonical"
+    },
+    {
+      "id": "layer:config",
+      "name": "Config",
+      "description": "",
+      "nodeIds": [
+        "file:.github/workflows/ci.yml",
+        "file:.github/workflows/release.yml"
+      ],
+      "display_order": 1,
+      "order_basis": "canonical"
+    },
+    {
+      "id": "layer:docs-tooling",
+      "name": "Docs & Tooling",
+      "description": "",
+      "nodeIds": [
+        "file:docs/mcp-projection.en.md",
+        "file:docs/mcp-projection.ru.md",
+        "file:docs/release-candidate.md",
+        "file:examples/booking_app.py"
+      ],
+      "display_order": 2,
+      "order_basis": "canonical"
+    },
+    {
+      "id": "layer:test",
+      "name": "Test",
+      "description": "",
+      "nodeIds": [
+        "file:tests/test_adapter.py",
+        "file:tests/test_jsonrpc_server.py",
+        "file:tests/test_mcp_schema.py",
+        "file:tests/test_oauth.py",
+        "file:tests/test_protocol.py",
+        "file:tests/test_strategy.py"
+      ],
+      "display_order": 3,
+      "order_basis": "canonical"
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "target_path": "README.md",
+      "page_type": "repo_overview",
+      "title": "README.md",
+      "depth": 0,
+      "kind": "overview",
+      "reason": "Start here for the end-to-end picture before diving into the code.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 2,
+      "target_path": "src/muscles_mcp/server.py",
+      "page_type": "file_page",
+      "title": "server.py",
+      "depth": 0,
+      "kind": "code",
+      "reason": "An entry point \u2014 execution and imports fan out from here.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 3,
+      "target_path": "src/muscles_mcp/__init__.py",
+      "page_type": "file_page",
+      "title": "__init__.py",
+      "depth": 0,
+      "kind": "code",
+      "reason": "The walk's anchor \u2014 the entry point above only wires the app together, so the tour follows the file whose imports fan out the widest.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 4,
+      "target_path": "src/muscles_mcp/strategy.py",
+      "page_type": "file_page",
+      "title": "strategy.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 5,
+      "target_path": "src/muscles_mcp/utils.py",
+      "page_type": "file_page",
+      "title": "utils.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 6,
+      "target_path": "src/muscles_mcp/adapter.py",
+      "page_type": "file_page",
+      "title": "adapter.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 7,
+      "target_path": "src/muscles_mcp/protocols.py",
+      "page_type": "file_page",
+      "title": "protocols.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 8,
+      "target_path": "src/muscles_mcp/schema/mcp.py",
+      "page_type": "file_page",
+      "title": "mcp.py",
+      "depth": 2,
+      "kind": "code",
+      "reason": "Reached 2 imports deep \u2014 a supporting building block.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 9,
+      "target_path": "src/muscles_mcp/schema/__init__.py",
+      "page_type": "file_page",
+      "title": "__init__.py",
+      "depth": 3,
+      "kind": "code",
+      "reason": "Off the import path from the entry points \u2014 a standalone or supporting file.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 10,
+      "target_path": "tests/test_adapter.py",
+      "page_type": "file_page",
+      "title": "test_adapter.py",
+      "depth": 4,
+      "kind": "code",
+      "reason": "The test suite \u2014 how the system's behavior is verified.",
+      "layer_id": "layer:test"
+    }
+  ],
+  "modules": [
+    {
+      "id": "module:application",
+      "name": "Application",
+      "path": "",
+      "layerId": "layer:application",
+      "nodeIds": [
+        "file:README.md",
+        "file:pyproject.toml",
+        "file:src/muscles_mcp/__init__.py",
+        "file:src/muscles_mcp/adapter.py",
+        "file:src/muscles_mcp/protocols.py",
+        "file:src/muscles_mcp/schema/__init__.py",
+        "file:src/muscles_mcp/schema/mcp.py",
+        "file:src/muscles_mcp/server.py",
+        "file:src/muscles_mcp/strategy.py",
+        "file:src/muscles_mcp/utils.py"
+      ],
+      "wholeLayer": true,
+      "language": "python"
+    },
+    {
+      "id": "module:docs-tooling",
+      "name": "Docs & Tooling",
+      "path": "",
+      "layerId": "layer:docs-tooling",
+      "nodeIds": [
+        "file:docs/mcp-projection.en.md",
+        "file:docs/mcp-projection.ru.md",
+        "file:docs/release-candidate.md",
+        "file:examples/booking_app.py"
+      ],
+      "wholeLayer": true,
+      "language": "markdown"
+    },
+    {
+      "id": "module:tests",
+      "name": "Test",
+      "path": "tests",
+      "layerId": "layer:test",
+      "nodeIds": [
+        "file:tests/test_adapter.py",
+        "file:tests/test_jsonrpc_server.py",
+        "file:tests/test_mcp_schema.py",
+        "file:tests/test_oauth.py",
+        "file:tests/test_protocol.py",
+        "file:tests/test_strategy.py"
+      ],
+      "wholeLayer": true,
+      "language": "python"
+    }
+  ]
+}

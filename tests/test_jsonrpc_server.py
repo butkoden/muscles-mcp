@@ -1,6 +1,6 @@
 import json
 
-from muscles_mcp import (
+from muscles.mcp import (
     McpAccessDenied,
     McpInvalidParams,
     McpMethodNotFound,
